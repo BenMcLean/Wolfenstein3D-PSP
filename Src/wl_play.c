@@ -48,6 +48,9 @@ memptr demobuffer;
 // curent user input
 //
 int controlx, controly; /* range from -100 to 100 per tic */
+// PSP_DEVIATION: separate strafe axis (positive = right) and auto-run toggle
+int controlstrafe;
+boolean autorun;
 boolean buttonstate[NUMBUTTONS];
 
 static void RemoveObj(objtype *gone);
@@ -269,7 +272,8 @@ void PollJoystickButtons()
 
 void PollKeyboardMove()
 {
-	if (buttonstate[bt_run])
+	// PSP_DEVIATION: auto-run inverts run (stock: if (buttonstate[bt_run]))
+	if (buttonstate[bt_run] ^ autorun)
 	{
 		if (IN_KeyDown(dirscan[di_north]))
 			controly -= RUNMOVE * tics;
@@ -291,6 +295,17 @@ void PollKeyboardMove()
 		if (IN_KeyDown(dirscan[di_east]))
 			controlx += BASEMOVE * tics;
 	}
+
+	// BEGIN PSP_DEVIATION: shoulder-button strafe, independent of turning
+	{
+		int strafemove = (buttonstate[bt_run] ^ autorun) ? RUNMOVE : BASEMOVE;
+
+		if (IN_KeyDown(sc_StrafeLeft))
+			controlstrafe -= strafemove * tics;
+		if (IN_KeyDown(sc_StrafeRight))
+			controlstrafe += strafemove * tics;
+	}
+	// END PSP_DEVIATION
 }
 
 /*
@@ -325,7 +340,8 @@ void PollJoystickMove()
 
 	INL_GetJoyDelta(joystickport, &joyx, &joyy);
 
-	if (buttonstate[bt_run])
+	// PSP_DEVIATION: auto-run inverts run (stock: if (buttonstate[bt_run]))
+	if (buttonstate[bt_run] ^ autorun)
 	{
 		if (joyx > 64)
 			controlx += RUNMOVE * tics;
@@ -396,6 +412,7 @@ void PollControls()
 
 	controlx = 0;
 	controly = 0;
+	controlstrafe = 0; // PSP_DEVIATION: must be zeroed before the demoplayback early return
 	memcpy(buttonheld, buttonstate, sizeof(buttonstate));
 	memset(buttonstate, 0, sizeof(buttonstate));
 
@@ -442,6 +459,11 @@ void PollControls()
 		controly = max;
 	else if (controly < min)
 		controly = min;
+
+	// BEGIN PSP_DEVIATION: the strafe axis is not stored in demos, so drop it while recording
+	if (demorecord)
+		controlstrafe = 0;
+	// END PSP_DEVIATION
 
 	if (demorecord)
 	{

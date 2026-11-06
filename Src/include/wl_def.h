@@ -1215,6 +1215,9 @@ extern int viewsize;
 // curent user input
 //
 extern int controlx, controly; // range from -100 to 100
+// PSP_DEVIATION: separate strafe axis (positive = right) and auto-run toggle
+extern int controlstrafe;
+extern boolean autorun;
 extern boolean buttonstate[NUMBUTTONS];
 
 extern boolean demorecord, demoplayback;

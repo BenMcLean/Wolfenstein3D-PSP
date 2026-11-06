@@ -32,7 +32,7 @@ OBJS = 	Src/automap.o \
 #WOLF3D_SOD_FULL 3
 
 ifndef VERSION
-    # default to WOLF3D full if no VERSION param is passed when building
+    # default to WOLF3D shareware if no VERSION param is passed when building
     VERSION=0
 endif
 
@@ -50,11 +50,11 @@ PSP_EBOOT_ICON= ICON0.png
 PSP_EBOOT_PIC1= PIC1.png
 
 ifeq ($(VERSION), 0)
-	PSP_EBOOT_TITLE = Wolfenstein 3D
+	PSP_EBOOT_TITLE = Wolfenstein 3D Shareware
 endif
 
 ifeq ($(VERSION), 1)
-	PSP_EBOOT_TITLE = Wolfenstein 3D Shareware
+	PSP_EBOOT_TITLE = Wolfenstein 3D
 endif
 
 ifeq ($(VERSION), 2)

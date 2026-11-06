@@ -203,23 +203,26 @@ void ToggleSpeed()
 	speed = (speed + 1) % 6;
 }
 
+// PSP_DEVIATION: auto-run toggle (not in the original game)
+void ToggleAutoRun()
+{
+	autorun = !autorun;
+	Message(autorun ? "Auto-run ON" : "Auto-run OFF");
+	sceKernelDelayThread(500 * 1000);
+}
+
 static int mx = 0;
 static int my = 0;
 
 void INL_Update()
 {
 	static u32 buttons = 0;
-	static int multiplex = 0;
 	u32 new_buttons;
 	static int mu = 0;
 	static int md = 0;
 
 	sceCtrlReadBufferPositive(&pad, 1);
-	multiplex ^= 1;
-	if (multiplex && (pad.Buttons & (PSP_CTRL_RTRIGGER | PSP_CTRL_LTRIGGER)))
-		pad.Buttons &= ~(PSP_CTRL_RIGHT | PSP_CTRL_LEFT);
-	if (!multiplex && (pad.Buttons & (PSP_CTRL_RIGHT | PSP_CTRL_LEFT)))
-		pad.Buttons &= ~(PSP_CTRL_RTRIGGER | PSP_CTRL_LTRIGGER);
+	// PSP_DEVIATION: removed the per-call d-pad/shoulder masking; it made held buttons flicker
 	new_buttons = pad.Buttons ^ buttons; // set if button changed
 	buttons = pad.Buttons;
 
@@ -261,7 +264,12 @@ void INL_Update()
 		else
 		{
 			// [] just pressed
-			keyboard_handler(sc_RShift, 1); // run pressed
+			// BEGIN PSP_DEVIATION: O + [] toggles auto-run (in a level only)
+			if ((buttons & PSP_CTRL_CIRCLE) && ingame)
+				ToggleAutoRun();
+			else
+				keyboard_handler(sc_RShift, 1); // run pressed
+			// END PSP_DEVIATION
 		}
 	}
 
@@ -333,17 +341,24 @@ void INL_Update()
 				keyboard_handler(sc_LeftArrow, 1); // left pressed
 		}
 	}
+	// BEGIN PSP_DEVIATION: shoulder buttons strafe in a level.
+	// The strafe keys follow the physical buttons on every update (level-triggered) and are written
+	// straight into the key arrays, so LastScan is not disturbed and IN_ClearKeysDown cannot leave
+	// them stuck off. Outside a level the shoulders keep their old menu behaviour (Alt + arrow).
+	Keyboard[sc_StrafeLeft] = InternalKeyboard[sc_StrafeLeft] = (pad.Buttons & PSP_CTRL_LTRIGGER) != 0;
+	Keyboard[sc_StrafeRight] = InternalKeyboard[sc_StrafeRight] = (pad.Buttons & PSP_CTRL_RTRIGGER) != 0;
 	if (new_buttons & PSP_CTRL_RTRIGGER)
 	{
 		if (!(buttons & PSP_CTRL_RTRIGGER))
 		{
 			// rtrg just released
-			keyboard_handler(sc_Alt, 0);		// alt not pressed
-			keyboard_handler(sc_RightArrow, 0); // right not pressed
+			keyboard_handler(sc_Alt, 0); // alt not pressed
+			if (!(buttons & PSP_CTRL_RIGHT))
+				keyboard_handler(sc_RightArrow, 0); // right not pressed (unless the d-pad holds it)
 		}
-		else
+		else if (!ingame)
 		{
-			// rtrg just pressed
+			// rtrg just pressed (menus only)
 			keyboard_handler(sc_Alt, 1);		// alt pressed
 			keyboard_handler(sc_RightArrow, 1); // right pressed
 		}
@@ -353,16 +368,18 @@ void INL_Update()
 		if (!(buttons & PSP_CTRL_LTRIGGER))
 		{
 			// ltrg just released
-			keyboard_handler(sc_Alt, 0);	   // alt not pressed
-			keyboard_handler(sc_LeftArrow, 0); // left not pressed
+			keyboard_handler(sc_Alt, 0); // alt not pressed
+			if (!(buttons & PSP_CTRL_LEFT))
+				keyboard_handler(sc_LeftArrow, 0); // left not pressed (unless the d-pad holds it)
 		}
-		else
+		else if (!ingame)
 		{
-			// ltrg just pressed
+			// ltrg just pressed (menus only)
 			keyboard_handler(sc_Alt, 1);	   // alt pressed
 			keyboard_handler(sc_LeftArrow, 1); // left pressed
 		}
 	}
+	// END PSP_DEVIATION
 	if (new_buttons & PSP_CTRL_START)
 	{
 		if (!(buttons & PSP_CTRL_START))

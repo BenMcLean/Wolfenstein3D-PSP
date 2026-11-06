@@ -108,33 +108,43 @@ void ControlMovement(objtype *ob)
 {
 	int angle;
 	int angleunits;
+	int strafe; // PSP_DEVIATION
 
 	thrustspeed = 0;
 	//
 	// side to side move
 	//
+	// BEGIN PSP_DEVIATION: strafing is its own axis (controlstrafe) so it can combine with turning.
+	// The legacy bt_strafe mode (mouse button / Alt) still turns controlx into strafing; it is folded
+	// into the same single Thrust so the two sources never double up. The clamp keeps the combined
+	// value within the same bound PollControls applies to controlx/controly.
+	// stock: if (buttonstate[bt_strafe]) { Thrust sideways by controlx } else { turn by controlx }
+	strafe = controlstrafe;
 	if (buttonstate[bt_strafe])
+		strafe += controlx;
+
+	if (strafe > 100 * tics)
+		strafe = 100 * tics;
+	else if (strafe < -100 * tics)
+		strafe = -100 * tics;
+
+	if (strafe > 0)
 	{
-		//
-		// strafing
-		//
-		//
-		if (controlx > 0)
-		{
-			angle = ob->angle - ANGLES / 4;
-			if (angle < 0)
-				angle += ANGLES;
-			Thrust(angle, controlx * MOVESCALE); // move to left
-		}
-		else if (controlx < 0)
-		{
-			angle = ob->angle + ANGLES / 4;
-			if (angle >= ANGLES)
-				angle -= ANGLES;
-			Thrust(angle, -controlx * MOVESCALE); // move to right
-		}
+		angle = ob->angle - ANGLES / 4;
+		if (angle < 0)
+			angle += ANGLES;
+		Thrust(angle, strafe * MOVESCALE); // move to right
 	}
-	else
+	else if (strafe < 0)
+	{
+		angle = ob->angle + ANGLES / 4;
+		if (angle >= ANGLES)
+			angle -= ANGLES;
+		Thrust(angle, -strafe * MOVESCALE); // move to left
+	}
+	// END PSP_DEVIATION
+
+	if (!buttonstate[bt_strafe])
 	{
 		//
 		// not strafing

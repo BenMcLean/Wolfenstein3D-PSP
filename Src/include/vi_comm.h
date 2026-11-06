@@ -38,6 +38,10 @@ typedef int8_t ScanCode;
 #define sc_LShift 0x2a
 #define sc_RShift 0x36
 
+// PSP_DEVIATION: scancodes (comma/period) driven directly by the PSP shoulder buttons for strafing
+#define sc_StrafeLeft 0x33
+#define sc_StrafeRight 0x34
+
 #define sc_UpArrow 0x48
 #define sc_DownArrow 0x50
 #define sc_LeftArrow 0x4b
