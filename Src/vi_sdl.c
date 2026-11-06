@@ -25,6 +25,9 @@ int main(int argc, char *argv[])
 
 void DisplayTextSplash(byte *text);
 
+/* PSP_DEVIATION: wl_def.h declaration is commented out; implicit declarations are errors in modern GCC */
+extern int WriteConfig();
+
 /*
 ==========================
 =

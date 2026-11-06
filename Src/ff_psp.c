@@ -4,11 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef _PSP
-#include <sys/dirent.h>
-#else
+/* PSP_DEVIATION: modern pspdev newlib declares opendir/readdir/closedir in <dirent.h>, not <sys/dirent.h> */
 #include <dirent.h>
-#endif
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
 #endif

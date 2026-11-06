@@ -3170,7 +3170,13 @@ void CheckForEpisodes()
 
 #ifdef SPEAR
 #ifndef SPEARDEMO
-		if (!findfirst("*.sod", &f, FA_ARCH))
+		/* PSP_DEVIATION: use GAMEEXT (sod/sd2/sd3) so mission pack builds find their own data files */
+		if (!findfirst("*." GAMEEXT, &f, FA_ARCH))
+	{
+		strcpy(extension, GAMEEXT);
+	}
+	/* PSP_DEVIATION: GOG ships all three mission packs with the *.sod extension, one folder each */
+	else if (!findfirst("*.sod", &f, FA_ARCH))
 	{
 		strcpy(extension, "sod");
 	}

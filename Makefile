@@ -36,7 +36,9 @@ ifndef VERSION
     VERSION=0
 endif
 
-CFLAGS = -O2 -G0 -Wall -g -DHAVE_FFBLK -DDOSISM -DWMODE=$(VERSION)
+# PSP_DEVIATION: pin C standard; modern GCC defaults to C23 where false/true are keywords (breaks id_heads.h enum)
+# PSP_DEVIATION: -fcommon; GCC 10+ defaults to -fno-common, but headers here contain tentative definitions (menuitems, pad)
+CFLAGS = -std=gnu99 -fcommon -O2 -G0 -Wall -g -DHAVE_FFBLK -DDOSISM -DWMODE=$(VERSION)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 LIBDIR =
@@ -63,6 +65,15 @@ endif
 
 ifeq ($(VERSION), 3)
 	PSP_EBOOT_TITLE = Spear of Destiny
+endif
+
+# PSP_DEVIATION: Spear of Destiny mission packs
+ifeq ($(VERSION), 4)
+	PSP_EBOOT_TITLE = Spear of Destiny: Return to Danger
+endif
+
+ifeq ($(VERSION), 5)
+	PSP_EBOOT_TITLE = Spear of Destiny: Ultimate Challenge
 endif
 
 PSPSDK=$(shell psp-config --pspsdk-path)
