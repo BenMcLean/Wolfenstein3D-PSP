@@ -1,34 +1,34 @@
 TARGET = wolf3d
-OBJS = 	Src/automap.o \
-		Src/ff_psp.o \
-		Src/id_ca.o \
-		Src/id_us.o \
-		Src/id_vh.o \
-		Src/misc.o \
-		Src/objs.o \
-		Src/fmopl.o \
-		Src/vi_comm.o \
-		Src/vi_sdl.o \
-		Src/wl_act1.o \
-		Src/wl_act2.o \
-		Src/wl_act3.o \
-		Src/wl_agent.o \
-		Src/wl_debug.o \
-		Src/sd_comm.o \
-		Src/sd_sdl.o \
-		Src/wl_draw.o \
-		Src/wl_game.o \
-		Src/wl_inter.o \
-		Src/wl_main.o \
-		Src/wl_text.o \
-		Src/wl_menu.o \
-		Src/wl_play.o \
-		Src/wl_state.o \
-		Src/wl_map.o \
-		Src/wl_quiz.o \
+OBJS = 	src/automap.o \
+		src/ff_psp.o \
+		src/id_ca.o \
+		src/id_us.o \
+		src/id_vh.o \
+		src/misc.o \
+		src/objs.o \
+		src/fmopl.o \
+		src/vi_comm.o \
+		src/vi_sdl.o \
+		src/wl_act1.o \
+		src/wl_act2.o \
+		src/wl_act3.o \
+		src/wl_agent.o \
+		src/wl_debug.o \
+		src/sd_comm.o \
+		src/sd_sdl.o \
+		src/wl_draw.o \
+		src/wl_game.o \
+		src/wl_inter.o \
+		src/wl_main.o \
+		src/wl_text.o \
+		src/wl_menu.o \
+		src/wl_play.o \
+		src/wl_state.o \
+		src/wl_map.o \
+		src/wl_quiz.o \
 
 ## game selection: make GAME=<name>
-# GAME is the WMODE macro from Src/include/version.h, and also names the data directory:
+# GAME is the WMODE macro from src/include/version.h, and also names the data directory:
 #   WOLF3D_SHAREWARE, WOLF3D_FULL, WOLF3D_SOD_SHAREWARE, WOLF3D_SOD_FULL,
 #   WOLF3D_SOD_MISSION2, WOLF3D_SOD_MISSION3, WOLF3D_NOAH3D
 # The legacy numeric VERSION=<n> (the same macros' values) is still accepted.
