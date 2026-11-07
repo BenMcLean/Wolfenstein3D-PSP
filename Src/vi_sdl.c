@@ -2,6 +2,8 @@
 #include "SDL/SDL.h"
 #include <pspctrl.h>
 #include <psppower.h>
+#include <pspdebug.h>
+#include <pspkernel.h>
 
 PSP_HEAP_SIZE_KB(-256);
 
@@ -28,6 +30,35 @@ void DisplayTextSplash(byte *text);
 /* PSP_DEVIATION: wl_def.h declaration is commented out; implicit declarations are errors in modern GCC */
 extern int WriteConfig();
 
+// PSP_DEVIATION: stdout/stderr go nowhere on the PSP, so a fatal error looked like the game silently closing.
+// Show it on screen with the SDK debug screen and wait for a button press before exiting.
+static void ShowErrorScreen(const char *error)
+{
+	SceCtrlData ctrl;
+
+	pspDebugScreenInit();
+	pspDebugScreenSetBackColor(0x00000000);
+	pspDebugScreenSetTextColor(0x000000FF);
+	pspDebugScreenPrintf("\n  %s - ERROR\n\n", GAMENAME);
+	pspDebugScreenSetTextColor(0x00FFFFFF);
+	pspDebugScreenPrintf("  %s\n", error);
+	pspDebugScreenPrintf("  The game data files (*.%s) must be in the same folder\n", GAMEEXT);
+	pspDebugScreenPrintf("  as EBOOT.PBP, e.g. ms0:/PSP/GAME/<game folder>/\n\n");
+	pspDebugScreenPrintf("  Press X or O to exit.\n");
+
+	// wait for the button to be released, then pressed
+	do
+	{
+		sceCtrlReadBufferPositive(&ctrl, 1);
+		sceKernelDelayThread(20 * 1000);
+	} while (ctrl.Buttons & (PSP_CTRL_CROSS | PSP_CTRL_CIRCLE));
+	do
+	{
+		sceCtrlReadBufferPositive(&ctrl, 1);
+		sceKernelDelayThread(20 * 1000);
+	} while (!(ctrl.Buttons & (PSP_CTRL_CROSS | PSP_CTRL_CIRCLE)));
+}
+
 /*
 ==========================
 =
@@ -46,11 +77,8 @@ void Quit(char *error)
 		screen = grsegs[ORDERSCREEN];
 		WriteConfig();
 	}
-	else if (error)
-	{
-		CA_CacheGrChunk(ERRORSCREEN);
-		screen = grsegs[ERRORSCREEN];
-	}
+	// PSP_DEVIATION: the ERRORSCREEN chunk was cached here but never displayed (DisplayTextSplash is disabled), and loading it
+	// reads graphics data that may not exist yet when the error is missing data files. Show the error on screen instead.
 
 	ShutdownId();
 
@@ -62,6 +90,7 @@ void Quit(char *error)
 	if (error && *error)
 	{
 		fprintf(stderr, "Quit: %s\n", error);
+		ShowErrorScreen(error);
 		exit(EXIT_FAILURE);
 	}
 	exit(EXIT_SUCCESS);

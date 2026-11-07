@@ -44,6 +44,32 @@ static int wildcard(const char *name, const char *match)
 	return 1;
 }
 
+// PSP_DEVIATION: case-insensitive strstr. The pattern is uppercased below, but on the Vita (Adrenaline) directory entries keep
+// their on-disk case (e.g. lowercase "vswap.n3d"), so a case-sensitive strstr found no data files.
+static int containsnocase(const char *name, const char *match)
+{
+	size_t i, j;
+	size_t nlen = strlen(name);
+	size_t mlen = strlen(match);
+	for (i = 0; i + mlen <= nlen; i++)
+	{
+		for (j = 0; j < mlen; j++)
+		{
+			char a = name[i + j];
+			char b = match[j];
+			if (a >= 'a' && a <= 'z')
+				a ^= 32;
+			if (b >= 'a' && b <= 'z')
+				b ^= 32;
+			if (a != b)
+				break;
+		}
+		if (j == mlen)
+			return 1;
+	}
+	return 0;
+}
+
 int findfirst(const char *pathname, struct ffblk *ffblk, int attrib)
 {
 	char *match = strdup(pathname);
@@ -70,7 +96,7 @@ int findfirst(const char *pathname, struct ffblk *ffblk, int attrib)
 	struct dirent *ent;
 	while ((ent = readdir(dirhandle)) != 0)
 	{
-		if (strstr(ent->d_name, match) == 0 && wildcard(ent->d_name, match) == 0)
+		if (!containsnocase(ent->d_name, match) && wildcard(ent->d_name, match) == 0)
 			continue;
 		if (dirsize == 0)
 		{

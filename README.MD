@@ -17,19 +17,19 @@ For option 1, it will build each version of Wolf3D and package them in tar.gz fi
 For option 2, you need to specify which version of Wolf3D you intend to build:
 
 ```
-WOLF3D Shareware = 0
-WOLF3D Full retail = 1
-WOLF3D Spear of Destiny Shareware = 2
-WOLF3D Spear of Destiny Full = 3
-WOLF3D Spear of Destiny: Return to Danger = 4
-WOLF3D Spear of Destiny: Ultimate Challenge = 5
-Super 3-D Noah's Ark (DOS data files, *.N3D) = 6
+WOLF3D_SHAREWARE
+WOLF3D_FULL
+WOLF3D_SOD_SHAREWARE
+WOLF3D_SOD_FULL
+WOLF3D_SOD_MISSION2  (Return to Danger)
+WOLF3D_SOD_MISSION3  (Ultimate Challenge)
+WOLF3D_NOAH3D      (Super 3-D Noah's Ark, DOS data files, *.N3D)
 ```
 
 For instance to build the shareware version of Spear of Destiny run:
 
 ```
-make VERSION=2
+make GAME=WOLF3D_SOD_SHAREWARE
 ```
 
 # I built the full version of the game and it doesn't run?

@@ -8,50 +8,37 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.game }}
     runs-on: ubuntu-latest
     container: ghcr.io/pspdev/pspdev:latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          # VERSION values come from Src/include/version.h.
-          # VERSION=2 (Spear of Destiny demo) is intentionally not built.
-          - name: Wolf3D_Shareware
-            version: 0
-            data_dir: Wolf3D_Shareware
-          - name: Wolf3D_Full
-            version: 1
-            data_dir: Wolf3D_Full
-          - name: Wolf3D_SOD_Full
-            version: 3
-            data_dir: Wolf3D_SOD_Full
-          - name: Wolf3D_SOD_Mission2
-            version: 4
-            data_dir: Wolf3D_SOD_Mission2
-          - name: Wolf3D_SOD_Mission3
-            version: 5
-            data_dir: Wolf3D_SOD_Mission3
+          # game is the Makefile GAME name (also the data and menu/ directory name).
+          # WOLF3D_SOD_SHAREWARE is intentionally not built.
+          - game: WOLF3D_SHAREWARE
+          - game: WOLF3D_FULL
+          - game: WOLF3D_SOD_FULL
+          - game: WOLF3D_SOD_MISSION2
+          - game: WOLF3D_SOD_MISSION3
     steps:
       - uses: actions/checkout@v4
 
       - name: Build EBOOT
-        run: make VERSION=${{ matrix.version }}
+        run: make GAME=${{ matrix.game }} package
 
       - name: Package
         run: |
-          mkdir -p "dist/${{ matrix.name }}"
-          cp ${{ matrix.data_dir }}/* "dist/${{ matrix.name }}/"
-          mv EBOOT.PBP "dist/${{ matrix.name }}/"
           # Tag builds are named after the tag (v2026-11-06); manual runs use the short commit hash
           VERSION="${GITHUB_REF_NAME}"
           if [ "${GITHUB_REF_TYPE}" != "tag" ]; then VERSION="dev-$(echo "${GITHUB_SHA}" | cut -c1-7)"; fi
-          tar -C dist -czf "${{ matrix.name }}-${VERSION}.tar.gz" "${{ matrix.name }}"
+          tar -C dist -czf "${{ matrix.game }}-${VERSION}.tar.gz" "${{ matrix.game }}"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
-          path: ${{ matrix.name }}-*.tar.gz
+          name: ${{ matrix.game }}
+          path: ${{ matrix.game }}-*.tar.gz
           if-no-files-found: error
 
   release:
