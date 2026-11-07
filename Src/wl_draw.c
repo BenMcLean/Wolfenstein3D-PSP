@@ -4,7 +4,11 @@
    originally from David Haslam -- dch@sirius.demon.co.uk */
 
 /* the door is the last picture before the sprites */
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - each door picture is its own page
+#define DOORWALL(x) ((PMSpriteStart - (x)) - 8)
+#else
 #define DOORWALL (PMSpriteStart - 8)
+#endif
 
 #define ACTORSIZE 0x4000
 
@@ -16,6 +20,9 @@ fixed viewx, viewy; /* the focal point */
 static int viewangle;
 
 static unsigned tilehit;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - tile the last ray hit (used to mark it as seen for the automap)
+static int hitx, hity;
+#endif
 
 static int xtile, ytile;
 static int xtilestep, ytilestep;
@@ -242,10 +249,16 @@ static int CalcRotate(objtype *ob)
 
 	viewangle = player->angle + (centerx - ob->viewx) / 8;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (ob->obclass == flameobj || ob->obclass == missileobj)
+		return 0;
+	angle = (viewangle - 180) - dirangle[ob->dir];
+#else
 	if (ob->obclass == rocketobj || ob->obclass == hrocketobj)
 		angle = (viewangle - 180) - ob->angle;
 	else
 		angle = (viewangle - 180) - dirangle[ob->dir];
+#endif
 
 	angle += ANGLES / 16;
 	while (angle >= ANGLES)
@@ -253,8 +266,13 @@ static int CalcRotate(objtype *ob)
 	while (angle < 0)
 		angle += ANGLES;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (gamestates[ob->state].rotate == 2)
+		return 0;
+#else
 	if (gamestates[ob->state].rotate == 2) // 2 rotation pain frame
 		return 4 * (angle / (ANGLES / 2)); // seperated by 3
+#endif
 
 	return angle / (ANGLES / 8);
 }
@@ -276,11 +294,18 @@ typedef struct
 	int viewx;
 	int viewheight;
 	int shapenum;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	int snoring;
+#endif
 } visobj_t;
 
 static visobj_t vislist[MAXVISABLE], *visptr, *visstep, *farthest;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - used by the character cast
+void DrawScaleds()
+#else
 static void DrawScaleds()
+#endif
 {
 	int i, least, numvisable, height;
 	byte *tilespot, *visspot;
@@ -306,9 +331,17 @@ static void DrawScaleds()
 			continue;
 		}
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - invisible exit markers
+		if (statptr->shapenum == -2)
+			continue;
+#endif
+
 		if (!visptr->viewheight)
 			continue; /* too close to the object */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		visptr->snoring = 0;
+#endif
 		if (visptr < &vislist[MAXVISABLE - 1]) /* don't let it overflow */
 			visptr++;
 	}
@@ -343,6 +376,17 @@ static void DrawScaleds()
 			if (gamestates[obj->state].rotate)
 				visptr->shapenum += CalcRotate(obj);
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - sleeping animals snore
+			if ((obj->hitpoints > 0) ||
+				(obj->obclass == missileobj) || (obj->obclass == flameobj) || (obj->obclass == needleobj) || (obj->obclass == rocketobj))
+				visptr->snoring = 0;
+			else
+			{
+				// 2.6 number. Upper is frame, Lower is tics*2
+				visptr->snoring = obj->snore >> 6;
+				obj->snore += 3 * tics;
+			}
+#endif
 			if (visptr < &vislist[MAXVISABLE - 1]) /* don't let it overflow */
 				visptr++;
 			obj->flags |= FL_VISABLE;
@@ -375,6 +419,10 @@ static void DrawScaleds()
 		// draw farthest
 		//
 		ScaleShape(farthest->viewx, farthest->shapenum, farthest->viewheight);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		if (farthest->snoring)
+			ScaleShape(farthest->viewx, farthest->snoring + SPR_SNOOZE_1 - 1, farthest->viewheight);
+#endif
 
 		farthest->viewheight = 32000;
 	}
@@ -392,13 +440,30 @@ static void DrawScaleds()
 ==============
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+static int weaponscale[NUMWEAPONS] = {SPR_KNIFEREADY, SPR_PISTOLREADY, SPR_MACHINEGUNREADY, SPR_CHAINREADY, SPR_CANTAREADY, SPR_WATERREADY};
+#else
 static int weaponscale[NUMWEAPONS] = {SPR_KNIFEREADY, SPR_PISTOLREADY, SPR_MACHINEGUNREADY, SPR_CHAINREADY};
+#endif
 
 static void DrawPlayerWeapon()
 {
 	int shapenum;
 
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (player->state == s_deathcam)
+	{
+		if (endtics >= 192)
+			playstate = ex_victorious;
+		SimpleScaleShape(viewwidth / 2, SPR_YOUWIN, endtics);
+		endtics += tics;
+	}
+	else if (player->state == s_gameover)
+	{
+		SimpleScaleShape(viewwidth / 2, SPR_GAMEOVER, endtics);
+		endtics += tics;
+	}
+#elif !defined(SPEAR)
 	if (gamestate.victoryflag)
 	{
 		if ((player->state == s_deathcam) && (get_TimeCount() & 32))
@@ -425,7 +490,11 @@ static void DrawPlayerWeapon()
 ====================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - used by the character cast
+void WallRefresh()
+#else
 static void WallRefresh()
+#endif
 {
 	viewangle = player->angle;
 
@@ -529,9 +598,42 @@ static void DrawSpans(int x1, int x2, int height)
 ===================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void LoadFloorTiles(int tile)
+{
+	byte *dest, *src;
+	int x;
+
+	tile = tile * 2 + (PMSpriteStart - 8);
+	if (tile + 1 >= PMSpriteStart)
+	{
+		sprintf(str, "LoadFloorTiles(): Invalid floor tile %u!", (tile - (PMSpriteStart - 8)) / 2);
+		Quit(str);
+	}
+	src = PM_GetPage(tile + 1);
+	dest = planepics;
+	for (x = 0; x < 4096; x++)
+	{
+		*dest = *src++;
+		dest += 2;
+	}
+
+	src = PM_GetPage(tile);
+	dest = planepics + 1;
+	for (x = 0; x < 4096; x++)
+	{
+		*dest = *src++;
+		dest += 2;
+	}
+}
+#endif
+
 static void SetPlaneViewSize()
 {
-	int x, y;
+	int y;
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: 'x' is only used by the stock floor tile copy (Noah3D loads it via LoadFloorTiles)
+	int x;
+#endif
 	byte *dest, *src;
 
 	halfheight = viewheight >> 1;
@@ -545,6 +647,7 @@ static void SetPlaneViewSize()
 			basedist[y] = GLOBAL1 / 2 * scale / y;
 	}
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the floor tile is loaded by LoadFloorTiles
 	src = PM_GetPage(0);
 	dest = planepics;
 	for (x = 0; x < 4096; x++)
@@ -560,6 +663,10 @@ static void SetPlaneViewSize()
 		*dest = *src++;
 		dest += 2;
 	}
+#else
+	(void)src;
+	(void)dest;
+#endif
 }
 
 /*
@@ -609,7 +716,12 @@ void DrawPlanes()
 
 static unsigned int Ceiling[] =
 	{
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2,
+		0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2,
+		0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2,
+		0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2, 0xd2d2
+#elif !defined(SPEAR)
 		0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0xbfbf,
 		0x4e4e, 0x4e4e, 0x4e4e, 0x1d1d, 0x8d8d, 0x4e4e, 0x1d1d, 0x2d2d, 0x1d1d, 0x8d8d,
 		0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x1d1d, 0x2d2d, 0xdddd, 0x1d1d, 0x1d1d, 0x9898,
@@ -633,8 +745,13 @@ static unsigned int Ceiling[] =
 
 static void ClearScreen()
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	unsigned int ceiling = Ceiling[gamestate.mapon] & 0xFF;
+	unsigned int floor = 0xd9;
+#else
 	unsigned int ceiling = Ceiling[gamestate.episode * 10 + mapon] & 0xFF;
 	unsigned int floor = 0x19;
+#endif
 
 	VL_Bar(xoffset, yoffset, viewwidth, viewheight / 2, ceiling);
 	VL_Bar(xoffset, yoffset + viewheight / 2, viewwidth, viewheight / 2, floor);
@@ -660,6 +777,13 @@ void ThreeDRefresh()
 	/* clear out the traced array */
 	memset(spotvis, 0, sizeof(spotvis));
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - textured floors unless "nofloors" was given
+	if (nofloors)
+		ClearScreen();
+	WallRefresh();
+	if (!nofloors)
+		DrawPlanes();
+#else
 #ifndef DRAWCEIL
 	ClearScreen();
 #endif
@@ -668,11 +792,17 @@ void ThreeDRefresh()
 #ifdef DRAWCEIL
 	DrawPlanes(); /* silly floor/ceiling drawing */
 #endif
+#endif
 
 	/* draw all the scaled images */
 	DrawScaleds();		/* draw scaled stuff */
 	DrawPlayerWeapon(); /* draw player's hands */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (fizzlein)
+		if (!(--fizzlein))
+			lasttimecount = 0; /* don't make a big tic count */
+#endif
 	/* show screen and time last cycle */
 	VW_UpdateScreen();
 	frameon++;
@@ -816,6 +946,14 @@ void ScaleShape(int xcenter, int shapenum, unsigned height)
 	unsigned int scaler = (64 << 16) / (height >> 2);
 	unsigned int x, p;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (shapenum >= SPR_LAST)
+	{
+		sprintf(str, "ScaleShape: Invalid sprite %u!", shapenum);
+		Quit(str);
+	}
+#endif
+
 	if (spritegfx[shapenum] == NULL)
 		DeCompileSprite(shapenum);
 
@@ -829,8 +967,19 @@ void ScaleShape(int xcenter, int shapenum, unsigned height)
 
 void SimpleScaleShape(int xcenter, int shapenum, unsigned height)
 {
-	unsigned int scaler = (64 << 16) / height;
+	unsigned int scaler;
 	unsigned int x, p;
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the game over/you win pictures start at a height of zero
+	if (shapenum >= SPR_LAST)
+	{
+		sprintf(str, "SimpleScaleShape: Invalid sprite %u!", shapenum);
+		Quit(str);
+	}
+	if (!height)
+		return;
+#endif
+	scaler = (64 << 16) / height;
 
 	if (spritegfx[shapenum] == NULL)
 		DeCompileSprite(shapenum);
@@ -893,10 +1042,32 @@ static void HitHorizDoor()
 	byte *wall;
 
 	doornum = tilehit & 0x7f;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	doorobjlist[doornum].seen = true;
+#endif
 	texture = ((xintercept - doorposition[doornum]) >> 4) & 0xfc0;
 
 	wallheight[postx] = CalcHeight();
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	switch (doorobjlist[doornum].lock)
+	{
+	case dr_normal:
+		doorpage = DOORWALL(5);
+		break;
+	case dr_lock1:
+		doorpage = DOORWALL(4);
+		break;
+	case dr_lock2:
+		doorpage = DOORWALL(3);
+		break;
+	case dr_elevator:
+		doorpage = DOORWALL(2);
+		break;
+	default:
+		break;
+	}
+#else
 	switch (doorobjlist[doornum].lock)
 	{
 	case dr_normal:
@@ -912,9 +1083,13 @@ static void HitHorizDoor()
 		doorpage = DOORWALL + 4;
 		break;
 	}
+#endif
 
 	wall = PM_GetPage(doorpage);
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 static void HitVertDoor()
@@ -923,10 +1098,32 @@ static void HitVertDoor()
 	byte *wall;
 
 	doornum = tilehit & 0x7f;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	doorobjlist[doornum].seen = true;
+#endif
 	texture = ((yintercept - doorposition[doornum]) >> 4) & 0xfc0;
 
 	wallheight[postx] = CalcHeight();
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	switch (doorobjlist[doornum].lock)
+	{
+	case dr_normal:
+		doorpage = DOORWALL(5);
+		break;
+	case dr_lock1:
+		doorpage = DOORWALL(4);
+		break;
+	case dr_lock2:
+		doorpage = DOORWALL(3);
+		break;
+	case dr_elevator:
+		doorpage = DOORWALL(2);
+		break;
+	default:
+		break;
+	}
+#else
 	switch (doorobjlist[doornum].lock)
 	{
 	case dr_normal:
@@ -942,9 +1139,17 @@ static void HitVertDoor()
 		doorpage = DOORWALL + 4;
 		break;
 	}
+#endif
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	wall = PM_GetPage(doorpage);
+#else
 	wall = PM_GetPage(doorpage + 1);
+#endif
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 static void HitVertWall()
@@ -967,7 +1172,11 @@ static void HitVertWall()
 	{ // check for adjacent doors
 		ytile = yintercept >> TILESHIFT;
 		if (tilemap[xtile - xtilestep][ytile] & 0x80)
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			wallpic = DOORWALL(1);
+#else
 			wallpic = DOORWALL + 3;
+#endif
 		else
 			wallpic = vertwall[tilehit & ~0x40];
 	}
@@ -976,6 +1185,9 @@ static void HitVertWall()
 
 	wall = PM_GetPage(wallpic);
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 static void HitHorizWall()
@@ -997,7 +1209,11 @@ static void HitHorizWall()
 	{ // check for adjacent doors
 		xtile = xintercept >> TILESHIFT;
 		if (tilemap[xtile][ytile - ytilestep] & 0x80)
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			wallpic = DOORWALL(1);
+#else
 			wallpic = DOORWALL + 2;
+#endif
 		else
 			wallpic = horizwall[tilehit & ~0x40];
 	}
@@ -1006,6 +1222,9 @@ static void HitHorizWall()
 
 	wall = PM_GetPage(wallpic);
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 static void HitHorizPWall()
@@ -1031,6 +1250,9 @@ static void HitHorizPWall()
 	wallpic = horizwall[tilehit & 63];
 	wall = PM_GetPage(wallpic);
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 static void HitVertPWall()
@@ -1056,6 +1278,9 @@ static void HitVertPWall()
 
 	wall = PM_GetPage(wallpic);
 	ScalePost(wall, texture);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mark as seen for the automap
+	tilemap[hitx][hity] |= 0x20;
+#endif
 }
 
 #define DEG90 900
@@ -1194,6 +1419,11 @@ static void AsmRefresh()
 	vertentry:
 		Auto_Map.seen[xtile][TILE(yintercept)] = 1;
 		tilehit = tilemap[xtile][TILE(yintercept)];
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		hitx = xtile;
+		hity = TILE(yintercept);
+		tilehit &= 0xDF;
+#endif
 		/* printf("vert: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", postx, tilehit, xtile, ytile, xintercept, yintercept, xpartialup, xpartialdown, ypartialup, ypartialdown, xpartial, ypartial, doorhit, angle, midangle, focaltx, focalty, xstep, ystep); */
 
 		if (tilehit)
@@ -1251,6 +1481,11 @@ static void AsmRefresh()
 	horizentry:
 		Auto_Map.seen[TILE(xintercept)][ytile] = 1;
 		tilehit = tilemap[TILE(xintercept)][ytile];
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		hitx = TILE(xintercept);
+		hity = ytile;
+		tilehit &= 0xDF;
+#endif
 		/* printf("horz: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", postx, tilehit, xtile, ytile, xintercept, yintercept, xpartialup, xpartialdown, ypartialup, ypartialdown, xpartial, ypartial, doorhit, angle, midangle, focaltx, focalty, xstep, ystep); */
 
 		if (tilehit)

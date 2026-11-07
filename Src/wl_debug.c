@@ -153,11 +153,32 @@ int DebugKeys()
 		VW_UpdateScreen();
 		GivePoints(100000);
 		HealSelf(99);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - everything
+		gamestate.keys = 3;
+		DrawKeys();
+		gamestate.gas += 10;
+		if (gamestate.gas > 99)
+			gamestate.gas = 99;
+		gamestate.missiles += 10;
+		if (gamestate.missiles > 99)
+			gamestate.missiles = 99;
+		gamestate.maxammo = 299;
+		gamestate.machinegun = 1;
+		gamestate.chaingun = 1;
+		gamestate.flamethrower = 1;
+		gamestate.missile = 1;
+		gamestate.automap = true;
+		GiveWeapon(wp_chaingun);
+		gamestate.ammo += 50;
+		if (gamestate.ammo > gamestate.maxammo)
+			gamestate.ammo = gamestate.maxammo;
+#else
 		if (gamestate.bestweapon < wp_chaingun)
 			GiveWeapon(gamestate.bestweapon + 1);
 		gamestate.ammo += 50;
 		if (gamestate.ammo > 99)
 			gamestate.ammo = 99;
+#endif
 		DrawAmmo();
 		IN_Ack();
 		return 1;
@@ -202,7 +223,9 @@ int DebugKeys()
 	{
 		CenterWindow(26, 3);
 		PrintY += 6;
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		US_Print("  Warp to which level(1-30):");
+#elif !defined(SPEAR)
 		US_Print("  Warp to which level(1-10):");
 #elif defined(SPEARDEMO)
 		US_Print("  Warp to which level(1-2):");
@@ -214,7 +237,9 @@ int DebugKeys()
 		if (!esc)
 		{
 			level = atoi(str);
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			if (level > 0 && level < 31)
+#elif !defined(SPEAR)
 			if (level > 0 && level < 11)
 #elif defined(SPEARDEMO)
 			if (level > 0 && level < 2)

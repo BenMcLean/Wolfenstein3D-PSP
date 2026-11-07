@@ -13,6 +13,7 @@
 #define WOLF3D_SOD_FULL 3
 #define WOLF3D_SOD_MISSION2 4 /* PSP_DEVIATION */
 #define WOLF3D_SOD_MISSION3 5 /* PSP_DEVIATION */
+#define WOLF3D_NOAH3D 6 /* PSP_DEVIATION: Super 3-D Noah's Ark */
 
 #ifndef WMODE
 #define WMODE WOLF3D_SHAREWARE
@@ -64,6 +65,13 @@
 #define GAMENAME "Spear of Destiny: Ultimate Challenge"
 #define GAMEEXT "sd3"
 #define GAMETYPE "SD3\0"
+
+/* PSP_DEVIATION: Super 3-D Noah's Ark (S3DNA), uses the same compilation flag as the wolf3d/ source recreation */
+#elif WMODE == 6
+#define GAMEVER_NOAH3D
+#define GAMENAME "Super 3-D Noah's Ark"
+#define GAMEEXT "n3d"
+#define GAMETYPE "N3D\0"
 
 #else
 #error "please edit version.h and fix WMODE"

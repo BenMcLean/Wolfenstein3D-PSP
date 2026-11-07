@@ -11,12 +11,15 @@
 boolean ingame;
 gametype gamestate;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+int endtics, fizzlein;
+#endif
 long spearx, speary;
 unsigned spearangle;
 boolean spearflag;
 
 /* ELEVATOR BACK MAPS - REMEMBER (-1)!! */
-#ifndef SPEAR
+#if !defined(SPEAR) && !defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION - no episodes
 static int ElevatorBackTo[] = {1, 1, 7, 3, 5, 3};
 #endif
 
@@ -45,6 +48,195 @@ void ClearMemory()
 ==========================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void ScanInfoPlane (void)
+{
+	unsigned	x,y; // PSP_DEVIATION: removed unused 'i','j'
+	int			tile;
+	word *start;
+
+	start = mapsegs[1];
+	for (y=0;y<mapheight;y++)
+		for (x=0;x<mapwidth;x++)
+		{
+			tile = *start++;
+			if (!tile)
+				continue;
+
+			switch (tile)
+			{
+			case 19:
+			case 20:
+			case 21:
+			case 22:
+				SpawnPlayer(x,y,NORTH+tile-19);
+				break;
+
+			case 23:
+			case 24:
+			case 25:
+			case 26:
+			case 27:
+			case 28:
+			case 29:
+			case 30:
+
+			case 31:
+			case 32:
+			case 33:
+			case 34:
+			case 35:
+			case 36:
+			case 37:
+			case 38:
+
+			case 39:
+			case 40:
+			case 41:
+			case 42:
+			case 43:
+			case 44:
+			case 45:
+			case 46:
+
+			case 47:
+			case 48:
+			case 49:
+			case 50:
+			case 51:
+			case 52:
+			case 53:
+			case 54:
+
+			case 55:
+			case 56:
+			case 57:
+			case 58:
+			case 59:
+			case 60:
+			case 61:
+			case 62:
+
+// *** ALPHA RESTORATION ***
+			case 63:
+			case 64:
+			case 65:
+			case 66:
+			case 67:
+			case 68:
+			case 69:
+			case 70:
+// *** PRE-V1.4 APOGEE RESTORATION ***
+			case 71:
+			case 72:
+			case 73:						// TRUCK AND SPEAR!
+			case 74:
+
+				SpawnStatic(x,y,tile-23);
+				break;
+// *** ALPHA RESTORATION ***
+// Apparently we need the redundant break for code recreation
+
+//
+// P wall
+//
+			case 98:
+				if (!loadedgame)
+				  gamestate.secrettotal++;
+				break;
+
+			// *** S3DNA RESTORATION ***
+			case 99:
+				*(start-1) = 0;
+				break;
+			case 100:
+			case 101:
+				SpawnExit(x,y,tile==101);
+				break;
+
+//
+// guard
+//
+			// *** S3DNA RESTORATION ***
+			case 108:
+			case 126:
+				SpawnStand(en_guard,x,y,0,tile==126);
+				break;
+//
+// officer
+//
+			// *** S3DNA RESTORATION ***
+			case 109:
+			case 127:
+				SpawnStand(en_officer,x,y,0,tile==127);
+				break;
+
+
+//
+// ss
+//
+			// *** S3DNA RESTORATION ***
+			case 110:
+			case 128:
+				SpawnStand(en_ss,x,y,0,tile==128);
+				break;
+
+//
+// dogs
+//
+			// *** S3DNA RESTORATION ***
+			case 111:
+			case 129:
+				SpawnStand(en_dog,x,y,0,tile==129);
+				break;
+
+			// *** S3DNA RESTORATION ***
+//
+// mutants
+//
+			case 112:
+			case 130:
+				SpawnStand(en_mutant,x,y,0,tile==130);
+				break;
+//
+// boss
+//
+			// *** S3DNA RESTORATION ***
+			case 113:
+			case 131:
+				SpawnBoss (x,y);
+				break;
+			case 114:
+			case 132:
+				SpawnSchabbs (x,y);
+				break;
+			case 115:
+			case 133:
+				SpawnGretel (x,y);
+				break;
+			case 116:
+			case 134:
+				SpawnGift (x,y);
+				break;
+			case 117:
+			case 135:
+				SpawnFat (x,y);
+				break;
+			case 118:
+			case 136:
+				SpawnHitler (x,y);
+				break;
+
+			// *** S3DNA + ALPHA RESTORATION ***
+			default:
+				sprintf (str,"ScanInfoPlane: Invalid object $%02X at %d, %d!\n",
+					tile,x,y);
+				Quit (str);
+			}
+
+		}
+}
+#else
 void ScanInfoPlane()
 {
 	unsigned x, y;
@@ -432,6 +624,7 @@ void ScanInfoPlane()
 			}
 		}
 }
+#endif /* GAMEVER_NOAH3D */
 
 /* ======================================================================== */
 
@@ -443,6 +636,128 @@ void ScanInfoPlane()
 ==================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void SetupGameLevel (void)
+{
+	int	x,y; // PSP_DEVIATION: removed unused 'i','spot'
+	word *map,tile;
+
+
+	// *** ALPHA RESTORATION ***
+	if (!loadedgame)
+	{
+	 gamestate.TimeCount=
+	 gamestate.secrettotal=
+	 gamestate.killtotal=
+	 gamestate.treasuretotal=
+	 gamestate.secretcount=
+	 gamestate.killcount=
+	 gamestate.treasurecount=0;
+	 // *** S3DNA RESTORATION ***
+	 pwallstate=0;
+	}
+
+	if (demoplayback || demorecord)
+		US_InitRndT (false);
+	else
+		US_InitRndT (true);
+
+//
+// load the level
+//
+	// *** S3DNA + ALPHA RESTORATION ***
+	CA_CacheMap (gamestate.mapon);
+
+	// PSP_DEVIATION: mapwidth and mapheight are constants (64) on the PSP, checked below
+	if (mapwidth != 64 || mapheight != 64)
+		// *** S3DNA RESTORATION ***
+		Quit ("SetupGameLevel(): Map not 64*64!");
+
+
+//
+// copy the wall data to a data segment array
+//
+	memset (tilemap,0,sizeof(tilemap));
+	memset (actorat,0,sizeof(actorat));
+	map = mapsegs[0];
+	for (y=0;y<mapheight;y++)
+		for (x=0;x<mapwidth;x++)
+		{
+			tile = *map++;
+			if (tile<AREATILE)
+			{
+				// *** S3DNA RESTORATION ***
+				if (tile == 89)
+					tile = 31;
+				else
+					tile &= 31;
+			// solid wall
+				tilemap[x][y] = tile;
+				actorat[x][y] = tile;
+			}
+			else
+			{
+			// area floor
+				tilemap[x][y] = 0;
+				actorat[x][y] = 0;
+			}
+		}
+
+//
+// spawn doors
+//
+	InitActorList ();			// start spawning things with a clean slate
+	InitDoorList ();
+	InitStaticList ();
+
+	map = mapsegs[0];
+	for (y=0;y<mapheight;y++)
+		for (x=0;x<mapwidth;x++)
+		{
+			tile = *map++;
+			if (tile >= 90 && tile <= 101)
+			{
+			// door
+				switch (tile)
+				{
+				// *** S3DNA RESTORATION ***
+				case 90:
+				case 91:
+					SpawnDoor (x,y,!(tile&1),0);
+					break;
+				case 92:
+				case 93:
+					SpawnDoor (x,y,!(tile&1),1);
+					break;
+				case 94:
+				case 95:
+					SpawnDoor (x,y,!(tile&1),2);
+					break;
+				case 96:
+				case 97:
+					SpawnDoor (x,y,!(tile&1),5);
+					break;
+				}
+			}
+		}
+
+//
+// spawn actors
+//
+	ScanInfoPlane ();
+
+	// *** S3DNA RESTORATION ***
+
+
+
+//
+// have the caching manager load and purge stuff to make sure all marks
+// are in memory
+//
+	CA_LoadAllSounds ();
+
+}
+#else
 void SetupGameLevel()
 {
 	int x, y;
@@ -558,6 +873,7 @@ void SetupGameLevel()
 
 	CA_LoadAllSounds();
 }
+#endif /* GAMEVER_NOAH3D */
 
 /* ======================================================================== */
 
@@ -584,11 +900,19 @@ void DrawPlayBorderSides()
 	}
 	else
 	{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		VW_Bar(0, 0, xl - 1, 200 - STATUSLINES, VIEWCOLOR);
+		VW_Bar(xl + viewwidthwin + 1, 0, xl - 2, 200 - STATUSLINES, VIEWCOLOR);
+
+		VW_Vlin(yl - 1, yl + viewheightwin, xl - 1, 220);
+		VW_Vlin(yl - 1, yl + viewheightwin, xl + viewwidthwin, 216);
+#else
 		VW_Bar(0, 0, xl - 1, 200 - STATUSLINES, 127);
 		VW_Bar(xl + viewwidthwin + 1, 0, xl - 2, 200 - STATUSLINES, 127);
 
 		VW_Vlin(yl - 1, yl + viewheightwin, xl - 1, 0);
 		VW_Vlin(yl - 1, yl + viewheightwin, xl + viewwidthwin, 125);
+#endif
 	}
 }
 
@@ -604,8 +928,11 @@ void DrawPlayBorder()
 {
 	int xl, yl;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	VW_Bar(0, 0, 320, 200 - STATUSLINES + 1, VIEWCOLOR);
+#else
 	VW_Bar(0, 0, 320, 200 - STATUSLINES + 1, 127);
-
+#endif
 	xl = 160 - viewwidthwin / 2;
 	yl = (200 - STATUSLINES - viewheightwin) / 2;
 	VW_Bar(xl, yl, viewwidthwin, viewheightwin + 1, 0);
@@ -616,23 +943,36 @@ void DrawPlayBorder()
 	}
 	else
 	{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		VW_Hlin(xl - 1, xl + viewwidthwin, yl - 1, 220);
+		VW_Hlin(xl - 1, xl + viewwidthwin, yl + viewheightwin, 216);
+		VW_Vlin(yl - 1, yl + viewheightwin, xl - 1, 220);
+		VW_Vlin(yl - 1, yl + viewheightwin, xl + viewwidthwin, 216);
+		VW_Plot(xl - 1, yl + viewheightwin, 214);
+#else
 		VW_Hlin(xl - 1, xl + viewwidthwin, yl - 1, 0);
 		VW_Hlin(xl - 1, xl + viewwidthwin, yl + viewheightwin, 125);
 		VW_Vlin(yl - 1, yl + viewheightwin, xl - 1, 0);
 		VW_Vlin(yl - 1, yl + viewheightwin, xl + viewwidthwin, 125);
 		VW_Plot(xl - 1, yl + viewheightwin, 124);
+#endif
 	}
 }
 
 void DrawStatusBar()
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - treasure counter, ammo drawing replaces the weapon picture
+	DrawTreasure();
+#endif
 	DrawFace();
 	DrawHealth();
 	DrawLives();
 	DrawLevel();
 	DrawAmmo();
 	DrawKeys();
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
 	DrawWeapon();
+#endif
 	DrawScore();
 }
 
@@ -742,7 +1082,11 @@ void RecordDemo()
 	PrintY += 6;
 	CA_CacheGrChunk(STARTFONT);
 	fontnumber = 0;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	US_Print("  Demo which level(1-30):");
+#else
 	US_Print("  Demo which level(1-10):");
+#endif
 	VW_UpdateScreen();
 	VW_FadeIn();
 
@@ -756,7 +1100,7 @@ void RecordDemo()
 	SETFONTCOLOR(0, 15);
 	VW_FadeOut();
 
-#ifndef SPEAR
+#if !defined(SPEAR) && !defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION - no episodes
 	NewGame(gd_hard, level / 10);
 	gamestate.mapon = level % 10;
 #else
@@ -773,12 +1117,13 @@ void RecordDemo()
 
 	startgame = false;
 	demorecord = true;
-
 	SetupGameLevel();
 	StartMusic();
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	fizzlein = 3;
+	LoadFloorTiles(FloorTile[gamestate.mapon]);
+#endif
 	PlayLoop();
-
 	demoplayback = false;
 
 	StopMusic();
@@ -802,7 +1147,9 @@ void PlayDemo(int demonumber)
 {
 	int length;
 
-#ifndef SPEARDEMO
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - three demos
+	int dems[3] = {T_DEMO0, T_DEMO1, T_DEMO2};
+#elif !defined(SPEARDEMO)
 	int dems[4] = {T_DEMO0, T_DEMO1, T_DEMO2, T_DEMO3};
 #else
 	int dems[1] = {T_DEMO0};
@@ -831,12 +1178,13 @@ void PlayDemo(int demonumber)
 	loadedgame = false;
 	startgame = false;
 	demoplayback = true;
-
 	SetupGameLevel();
 	StartMusic();
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	LoadFloorTiles(FloorTile[gamestate.mapon]);
+	fizzlein = 3;
+#endif
 	PlayLoop();
-
 	CA_UnCacheGrChunk(dems[demonumber]);
 
 	demoplayback = false;
@@ -877,12 +1225,13 @@ int PlayDemoFromFile(char *demoname)
 
 	startgame = false;
 	demoplayback = true;
-
 	SetupGameLevel();
 	StartMusic();
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	LoadFloorTiles(FloorTile[gamestate.mapon]);
+	fizzlein = 3;
+#endif
 	PlayLoop();
-
 	MM_FreePtr(&demobuffer);
 
 	demoplayback = false;
@@ -995,6 +1344,50 @@ void Died()
 	//
 	FinishPaletteShifts();
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no fizzle fade, no wait for a key
+	VW_Bar(xoffset, yoffset, viewwidth, viewheight, 4);
+	IN_ClearKeysDown();
+
+	gamestate.lives--;
+
+	if (gamestate.lives > -1)
+	{
+		VL_FadeOut(0, 255, 0, 0, 0, 64);
+		SD_WaitSoundDone();
+		SD_StopSound();
+		gamestate.health = 100;
+		gamestate.weapon = gamestate.bestweapon = gamestate.chosenweapon = wp_pistol;
+		gamestate.ammo = STARTAMMO;
+		gamestate.keys = 0;
+		gamestate.attackframe = gamestate.attackcount =
+			gamestate.weaponframe = 0;
+
+		gamestate.maxammo = 99;
+		gamestate.gas = gamestate.missiles = 0;
+		gamestate.machinegun = 0;
+		gamestate.chaingun = 0;
+		gamestate.flamethrower = 0;
+		gamestate.missile = 0;
+		gamestate.automap = false;
+		DrawTreasure();
+
+		DrawKeys();
+		DrawAmmo();
+		DrawHealth();
+		DrawFace();
+		DrawLives();
+		return;
+	}
+
+	endtics = 0;
+	NewState(player, s_gameover);
+	while (endtics < 192)
+	{
+		UpdatePaletteShifts();
+		ThreeDRefresh();
+		CalcTics();
+	}
+#else
 	FizzleFade(false, 70, 4);
 
 	IN_ClearKeysDown();
@@ -1020,6 +1413,7 @@ void Died()
 		DrawFace();
 		DrawLives();
 	}
+#endif /* GAMEVER_NOAH3D */
 }
 
 //==========================================================================
@@ -1044,10 +1438,34 @@ restartgame:
 
 	do
 	{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mission briefings
+		endtics = 0;
+		if (!died && !loadedgame)
+			switch (gamestate.mapon)
+			{
+			case 0:
+				Briefing(0, false);
+				break;
+			case 3:
+				Briefing(1, false);
+				break;
+			case 7:
+				Briefing(2, false);
+				break;
+			case 12:
+				Briefing(3, false);
+				break;
+			case 17:
+				Briefing(4, false);
+				break;
+			case 23:
+				Briefing(5, false);
+				break;
+			}
+#endif
 		if (!loadedgame)
 			gamestate.score = gamestate.oldscore;
 		DrawScore();
-
 		startgame = false;
 		if (loadedgame)
 			loadedgame = false;
@@ -1070,8 +1488,10 @@ restartgame:
 		else
 			died = false;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		fizzlein = 3;
+#endif
 		DrawLevel();
-
 #ifdef SPEAR
 	startplayloop:
 #endif
@@ -1116,12 +1536,21 @@ restartgame:
 		if (startgame || loadedgame)
 			goto restartgame;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the last level always ends the game
+		if ((gamestate.mapon == 28) &&
+			((playstate == ex_completed) || (playstate == ex_secretlevel)))
+			playstate = ex_victorious;
+#endif
+
 		switch (playstate)
 		{
 		case ex_completed:
 		case ex_secretlevel:
 			gamestate.keys = 0;
 			DrawKeys();
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			gamestate.automap = false;
+#endif
 			VW_FadeOut();
 
 			ClearMemory();
@@ -1146,8 +1575,48 @@ restartgame:
 #endif
 
 			gamestate.oldscore = gamestate.score;
-
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define FROMSECRET1 7
+#define FROMSECRET2 25
+#define GAMEVER_SECRET1 11
+#define GAMEVER_SECRET2 29
+			//
+			// GOING TO SECRET LEVEL
+			//
+			if (playstate == ex_secretlevel)
+				switch (gamestate.mapon)
+				{
+				case FROMSECRET1:
+					gamestate.mapon = GAMEVER_SECRET1;
+					break;
+				case FROMSECRET2:
+					gamestate.mapon = GAMEVER_SECRET2;
+					break;
+				default:
+					sprintf(str, "GameLoop(): Invalid secret exit on level %d!\n", gamestate.mapon);
+					Quit(str);
+				}
+			else
+				//
+				// COMING BACK FROM SECRET LEVEL
+				//
+				if (gamestate.mapon == GAMEVER_SECRET1 || gamestate.mapon == GAMEVER_SECRET2)
+				switch (gamestate.mapon)
+				{
+				case GAMEVER_SECRET1:
+					gamestate.mapon = FROMSECRET1 + 1;
+					break;
+				case GAMEVER_SECRET2:
+					gamestate.mapon = FROMSECRET2 + 1;
+					break;
+				}
+			else
+				//
+				// SKIPPING SECRET LEVEL
+				//
+				if (gamestate.mapon == 10)
+				gamestate.mapon = 12;
+#elif !defined(SPEAR)
 			//
 			// COMING BACK FROM SECRET LEVEL
 			//
@@ -1219,14 +1688,19 @@ restartgame:
 			return;
 
 		case ex_victorious:
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			endtics = 0;
+#endif
 #ifndef SPEAR
 			VW_FadeOut();
 #else
 			VL_FadeOut(0, 255, 0, 17, 17, 300);
 #endif
 			ClearMemory();
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			LevelCompleted();
+			ClearMemory();
+#endif
 			Victory();
 
 			ClearMemory();

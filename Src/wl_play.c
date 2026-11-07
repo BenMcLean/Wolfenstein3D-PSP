@@ -33,8 +33,13 @@ int tics;
 boolean mouseenabled, joystickenabled, joypadenabled;
 int joystickport;
 int dirscan[4] = {sc_UpArrow, sc_RightArrow, sc_DownArrow, sc_LeftArrow};
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - weapons 5 and 6
+int buttonscan[NUMBUTTONS] =
+	{sc_Control, sc_Alt, sc_RShift, sc_Space, sc_1, sc_2, sc_3, sc_4, sc_5, sc_6};
+#else
 int buttonscan[NUMBUTTONS] =
 	{sc_Control, sc_Alt, sc_RShift, sc_Space, sc_1, sc_2, sc_3, sc_4};
+#endif
 int buttonmouse[4] = {bt_attack, bt_strafe, bt_use, bt_nobutton};
 int buttonjoy[4] = {bt_attack, bt_strafe, bt_use, bt_run};
 
@@ -63,6 +68,71 @@ static void RemoveObj(objtype *gone);
 =============================================================================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+/* LIST OF SONGS */
+static const int songs[] =
+{
+	//
+	// Episode One
+	//
+	NOAH01_MUS,
+	NOAH02_MUS,
+	NOAH07_MUS,
+
+	//
+	// Episode Two
+	//
+	NOAH03_MUS,
+	NOAH01_MUS,
+	NOAH02_MUS,
+	NOAH07_MUS,
+
+	//
+	// Episode Three
+	//
+	NOAH04_MUS,
+	NOAH03_MUS,
+	NOAH01_MUS,
+	NOAH07_MUS,
+	NOAH09_MUS,
+
+	//
+	// Episode Four
+	//
+	NOAH06_MUS,
+	NOAH04_MUS,
+	NOAH02_MUS,
+	NOAH03_MUS,
+	NOAH07_MUS,
+
+	//
+	// Episode Five
+	//
+	NOAH08_MUS,
+	NOAH01_MUS,
+	NOAH06_MUS,
+	NOAH04_MUS,
+	NOAH10_MUS,
+	NOAH07_MUS,
+
+	//
+	// Episode Six
+	//
+	NOAH11_MUS,
+	NOAH02_MUS,
+	NOAH03_MUS,
+	NOAH08_MUS,
+	NOAH06_MUS,
+	NOAH07_MUS,
+	NOAH09_MUS,
+
+	//
+	// Finale
+	//
+	NOAH02_MUS
+
+};
+#else
 /* LIST OF SONGS FOR EACH VERSION */
 static const int songs[] =
 	{
@@ -174,6 +244,7 @@ static const int songs[] =
 
 #endif
 };
+#endif /* GAMEVER_NOAH3D */
 
 /*
 =============================================================================
@@ -521,6 +592,172 @@ void CenterWindow(word w, word h)
 =====================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - mapmode parameter, JIM cheat, AutoMap key
+void CheckKeys(boolean mapmode)
+{
+	byte scan;
+
+	if (screenfaded || demoplayback) // don't do anything with a faded screen
+		return;
+
+	scan = LastScan;
+
+	//
+	// SECRET CHEAT CODE: 'JIM'
+	//
+	if (IN_KeyDown(sc_J) && IN_KeyDown(sc_I) && IN_KeyDown(sc_M))
+	{
+		ClearMemory();
+		WindowH = 160;
+		godmode ^= 1;
+		if (godmode)
+		{
+			Message("Invulnerability ON");
+			SD_PlaySound(BONUS1UPSND);
+		}
+		else
+		{
+			Message("Invulnerability OFF");
+			SD_PlaySound(NOBONUSSND);
+		}
+
+		IN_Ack();
+		IN_ClearKeysDown();
+
+		gamestate.health = 100;
+		gamestate.ammo = gamestate.maxammo = 299;
+		gamestate.gas = gamestate.missiles = 99;
+		gamestate.keys = 3;
+		gamestate.automap = true;
+		gamestate.machinegun = 1;
+		gamestate.chaingun = 1;
+		gamestate.flamethrower = 1;
+		gamestate.missile = 1;
+		GiveWeapon(wp_chaingun);
+		gamestate.score = 0;
+		gamestate.TimeCount += 42000L;
+
+		DrawHealth();
+		DrawKeys();
+		DrawAmmo();
+		DrawScore();
+
+		DrawPlayBorder();
+
+		return;
+	}
+
+	//
+	// OPEN UP DEBUG KEYS
+	//
+	if (IN_KeyDown(sc_BackSpace) && IN_KeyDown(sc_LShift) &&
+		IN_KeyDown(sc_Alt) && MS_CheckParm("debugmode"))
+	{
+		ClearMemory();
+		CA_CacheGrChunk(STARTFONT + 1);
+		ClearSplitVWB();
+
+		Message(STR_DEBUG);
+
+		CA_UnCacheGrChunk(STARTFONT + 1);
+		IN_ClearKeysDown();
+		IN_Ack();
+
+		DrawPlayBorderSides();
+		DebugOk = 1;
+	}
+
+	if (Paused)
+	{
+		VWB_DrawPic(128, 64, PAUSEDPIC);
+		VW_UpdateScreen();
+
+		SD_MusicOff();
+		IN_Ack();
+		IN_ClearKeysDown();
+		SD_MusicOn();
+
+		Paused = false;
+		return;
+	}
+
+	//
+	// F1-F7/ESC to enter control panel
+	//
+	if (
+		scan == sc_F10 ||
+		scan == sc_F9 ||
+		scan == sc_F7 ||
+		scan == sc_F8) // pop up quit dialog
+	{
+		ClearMemory();
+		ClearSplitVWB();
+		loadedgame = false;
+		US_ControlPanel(scan);
+
+		DrawPlayBorderSides();
+		VW_UpdateScreen();
+
+		if ((scan == sc_F9) && loadedgame)
+			StartMusic();
+
+		SETFONTCOLOR(0, 15);
+		IN_ClearKeysDown();
+
+		lasttimecount = get_TimeCount();
+
+		return;
+	}
+
+	if ((scan >= sc_F1 && scan <= sc_F9) || scan == sc_Escape)
+	{
+		StopMusic();
+		ClearMemory();
+		VW_FadeOut();
+
+		US_ControlPanel(scan);
+
+		SETFONTCOLOR(0, 15);
+		IN_ClearKeysDown();
+		DrawPlayScreen();
+		VW_UpdateScreen();
+
+		if (!startgame && !loadedgame)
+		{
+			if (!mapmode)
+				VW_FadeIn();
+			StartMusic();
+		}
+		if (loadedgame)
+			playstate = ex_abort;
+		lasttimecount = get_TimeCount();
+
+		return;
+	}
+
+	//
+	// TAB (or SELECT+[] on the PSP) to enter automap
+	//
+	if (!mapmode && (IN_KeyDown(sc_Tab) || scan == sc_A))
+	{
+		AutoMap();
+		return;
+	}
+
+	//
+	// ~-? debug keys
+	//
+	if (!mapmode && IN_KeyDown(sc_Tilde) && DebugOk)
+	{
+		CA_CacheGrChunk(STARTFONT);
+		fontnumber = 0;
+		SETFONTCOLOR(0, 15);
+		DebugKeys();
+		lasttimecount = get_TimeCount();
+		return;
+	}
+}
+#else
 void CheckKeys()
 {
 	byte scan;
@@ -728,6 +965,7 @@ void CheckKeys()
 		return;
 	}
 }
+#endif /* GAMEVER_NOAH3D */
 
 //===========================================================================
 
@@ -893,7 +1131,11 @@ void StopMusic()
 
 void StartMusic()
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	StartCPMusic(songs[gamestate.mapon]);
+#else
 	StartCPMusic(songs[gamestate.mapon + gamestate.episode * 10]);
+#endif
 }
 
 /*
@@ -907,9 +1149,15 @@ void StartMusic()
 #define NUMREDSHIFTS 6
 #define REDSTEPS 8
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define NUMWHITESHIFTS 4
+#define WHITESTEPS 14
+#define WHITETICS 4
+#else
 #define NUMWHITESHIFTS 3
 #define WHITESTEPS 20
 #define WHITETICS 6
+#endif
 
 byte redshifts[NUMREDSHIFTS][768];
 byte whiteshifts[NUMREDSHIFTS][768];
@@ -942,12 +1190,21 @@ void InitRedShifts()
 
 		for (j = 0; j <= 255; j++)
 		{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			delta = 32 - *baseptr;
+			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
+			delta = -*baseptr;
+			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
+			delta = 64 - *baseptr;
+			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
+#else
 			delta = 64 - *baseptr;
 			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
 			delta = -*baseptr;
 			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
 			delta = -*baseptr;
 			*workptr++ = *baseptr++ + delta * i / REDSTEPS;
+#endif
 		}
 	}
 
@@ -960,7 +1217,11 @@ void InitRedShifts()
 		{
 			delta = 64 - *baseptr;
 			*workptr++ = *baseptr++ + delta * i / WHITESTEPS;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			delta = 64 - *baseptr;
+#else
 			delta = 62 - *baseptr;
+#endif
 			*workptr++ = *baseptr++ + delta * i / WHITESTEPS;
 			delta = 0 - *baseptr;
 			*workptr++ = *baseptr++ + delta * i / WHITESTEPS;
@@ -1263,7 +1524,11 @@ void PlayLoop()
 		if (screenfaded)
 			VW_FadeIn();
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		CheckKeys(false);
+#else
 		CheckKeys();
+#endif
 
 		//
 		// debug aids

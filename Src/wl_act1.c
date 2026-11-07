@@ -10,6 +10,70 @@
 
 statobj_t statobjlist[MAXSTATS], *laststatobj;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+struct
+{
+	int picnum;
+	stat_t type;
+} static const statinfo[] =
+	{
+		{SPR_STAT_0},		   // puddle          spr1v
+		{SPR_STAT_1, block},   // Green Barrel    "
+		{SPR_STAT_2, block},   // Table/chairs    "
+		{SPR_STAT_3, block},   // Floor lamp      "
+		{SPR_STAT_4},		   // Chandelier      "
+		{SPR_QUIZ, bo_alpo},
+		{SPR_STAT_6, block},
+		{SPR_STAT_7, block}, // Red pillar      "
+
+		//
+		// NEW PAGE
+		//
+		{SPR_STAT_8, block}, // Tree            spr2v
+		{SPR_STAT_9, block},
+		{SPR_STAT_10, block},
+		{SPR_STAT_11},
+		{SPR_STAT_12},
+		{SPR_STAT_13},
+		{SPR_STAT_14, block},
+		{SPR_STAT_15, block},
+
+		//
+		// NEW PAGE
+		//
+		{SPR_STAT_16, bo_key1},
+		{SPR_STAT_17, bo_key2},
+		{SPR_STAT_18, bo_bandolier},
+		{SPR_STAT_19, bo_25clip},
+		{SPR_STAT_20, bo_food},
+		{SPR_STAT_21, bo_firstaid},
+		{SPR_STAT_22, bo_clip},
+		{SPR_STAT_23, bo_machinegun},
+
+		//
+		// NEW PAGE
+		//
+		{SPR_STAT_24, bo_chaingun},
+		{SPR_STAT_25, bo_cross},
+		{SPR_STAT_26, bo_chalice},
+		{SPR_STAT_27, bo_chest},
+		{SPR_STAT_28, bo_crown},
+		{SPR_STAT_29, bo_fullheal},
+		{SPR_STAT_30, block},
+		{SPR_STAT_31, block},
+
+		//
+		// NEW PAGE
+		//
+		{SPR_STAT_32, bo_flamethrower},
+		{SPR_STAT_33, bo_gascan},
+		{SPR_STAT_34, bo_launcher},
+		{SPR_STAT_35, bo_missiles},
+		{SPR_STAT_36, bo_map},
+
+		{-1} // terminator (PSP_DEVIATION: not in the S3DNA original, but PlaceItemType expects it)
+};
+#else
 struct
 {
 	int picnum;
@@ -93,6 +157,7 @@ struct
 		{SPR_STAT_26, bo_clip2}, // Clip            "
 		{-1}					 // terminator
 };
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ===============
@@ -106,6 +171,23 @@ void InitStaticList()
 {
 	laststatobj = &statobjlist[0];
 }
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void SpawnExit(int tilex, int tiley, boolean secret)
+{
+	laststatobj->shapenum = -2;
+	laststatobj->tilex = tilex;
+	laststatobj->tiley = tiley;
+	laststatobj->visspot = &spotvis[tilex][tiley];
+	laststatobj->flags = FL_BONUS;
+	laststatobj->itemnumber = secret ? bo_secret : bo_exit;
+
+	laststatobj++;
+
+	if (laststatobj == &statobjlist[MAXSTATS])
+		Quit("Too many static objects!\n");
+}
+#endif
 
 /*
 ===============
@@ -128,6 +210,9 @@ void SpawnStatic(int tilex, int tiley, int type)
 		actorat[tilex][tiley] = 1; // consider it a blocking tile
 	case dressing:
 		laststatobj->flags = 0;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		laststatobj->itemnumber = statinfo[type].type;
+#endif
 		break;
 
 	case bo_cross:
@@ -135,6 +220,9 @@ void SpawnStatic(int tilex, int tiley, int type)
 	case bo_bible:
 	case bo_crown:
 	case bo_fullheal:
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	case bo_chest:
+#endif
 		if (!loadedgame)
 			gamestate.treasuretotal++;
 
@@ -149,12 +237,26 @@ void SpawnStatic(int tilex, int tiley, int type)
 	case bo_chaingun:
 	case bo_food:
 	case bo_alpo:
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	case bo_bandolier:
+	case bo_flamethrower:
+	case bo_gascan:
+	case bo_launcher:
+	case bo_missiles:
+	case bo_map:
+#else
 	case bo_gibs:
 	case bo_spear:
+#endif
 		laststatobj->flags = FL_BONUS;
 		laststatobj->itemnumber = statinfo[type].type;
 		break;
 	default:
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		sprintf(str, "SpawnStatic: Invalid object $%02X at %d, %d!\n",
+				type, tilex, tiley);
+		Quit(str);
+#endif
 		break;
 	}
 
@@ -321,14 +423,25 @@ void SpawnDoor(int tilex, int tiley, boolean vertical, int lock)
 {
 	word *map;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (doornum >= MAXDOORS)
+	{
+		sprintf(str, "SpawnDoor(): Too many doors on level %d!", gamestate.mapon);
+		Quit(str);
+	}
+#else
 	if (doornum == 64)
 		Quit("64+ doors on level!");
+#endif
 
 	doorposition[doornum] = 0; // doors start out fully closed
 	lastdoorobj->tilex = tilex;
 	lastdoorobj->tiley = tiley;
 	lastdoorobj->vertical = vertical;
 	lastdoorobj->lock = lock;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	lastdoorobj->seen = false;
+#endif
 	lastdoorobj->action = dr_closed;
 
 	actorat[tilex][tiley] = doornum | 0x80; // consider it a solid wall
@@ -688,6 +801,9 @@ void MoveDoors()
 
 unsigned pwallstate;
 unsigned pwallpos; // amount a pushable wall has been moved (0-63)
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+unsigned pwallnoise;
+#endif
 unsigned pwallx, pwally;
 int pwalldir;
 
@@ -707,6 +823,9 @@ void PushWall(int checkx, int checky, int dir)
 		return;
 
 	oldtile = tilemap[checkx][checky];
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	oldtile &= 0xFFDF;
+#endif
 	if (!oldtile)
 		return;
 
@@ -759,6 +878,9 @@ void PushWall(int checkx, int checky, int dir)
 	*(mapsegs[1] + farmapylookup[pwally] + pwallx) = 0; // remove P tile info
 
 	SD_PlaySound(PUSHWALLSND);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	pwallnoise = 0;
+#endif
 }
 
 /*
@@ -784,6 +906,9 @@ void MovePWalls()
 	{
 		// block crossed into a new block
 		oldtile = tilemap[pwallx][pwally] & 63;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		oldtile &= 0xFFDF;
+#endif
 
 		//
 		// the tile can now be walked into
@@ -795,7 +920,11 @@ void MovePWalls()
 		//
 		// see if it should be pushed farther
 		//
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		if (pwallstate >= 256)
+#else
 		if (pwallstate > 256)
+#endif
 		{
 			//
 			// the block has been pushed two tiles
@@ -857,4 +986,12 @@ void MovePWalls()
 	}
 
 	pwallpos = (pwallstate / 2) & 63;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	pwallnoise += tics;
+	if (pwallnoise > 8)
+	{
+		SD_PlaySound(PUSHWALLSND);
+		pwallnoise -= 8;
+	}
+#endif
 }

@@ -1,6 +1,29 @@
 #ifndef __WL_MENU_H__
 #define __WL_MENU_H__
 
+// *** S3DNA RESTORATION ***
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+
+#define BORDCOLOR 0xd9
+#define BORD2COLOR 0xd7
+#define DEACTIVE 0xdb
+#define BKGDCOLOR 0xdd
+#define STRIPE 0x2c /* unused by S3DNA, still referenced by the stock DrawStripes */
+
+#define MenuFadeOut() VL_FadeOut(0, 255, 30, 23, 11, 8)
+
+#define READCOLOR 0x50
+#define READHCOLOR 0x0f
+#define VIEWCOLOR 0xda
+#define TEXTCOLOR 0xcc
+#define HIGHLIGHT 0xc5
+#define MenuFadeIn() VL_FadeIn(0, 255, gamepal, 8)
+
+#define MENUSONG NOAH01_MUS
+#define INTROSONG NOAH02_MUS
+
+#else /* GAMEVER_NOAH3D */
+
 #ifdef SPEAR
 
 #define BORDCOLOR 0x99
@@ -38,13 +61,15 @@
 #define INTROSONG XTOWER2_MUS
 #endif
 
+#endif /* GAMEVER_NOAH3D */
+
 #define SENSITIVE 60
 #define CENTER SENSITIVE * 2
 
 #define MENU_X 76
 #define MENU_Y 55
 #define MENU_W 178
-#if defined(UPLOAD)
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 #define MENU_H 13 * 10 + 6
 #else
 #define MENU_H 13 * 9 + 6
@@ -53,11 +78,20 @@
 #define SM_X 48
 #define SM_W 250
 
+// *** S3DNA RESTORATION ***
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define SM_Y1 28
+#define SM_H1 4 * 13 - 7
+#define SM_Y2 SM_Y1 + 5 * 13
+#define SM_H2 3 * 13 - 7
+#define SM_Y3 SM_Y2 + 4 * 13
+#else
 #define SM_Y1 20
 #define SM_H1 4 * 13 - 7
 #define SM_Y2 SM_Y1 + 5 * 13
 #define SM_H2 4 * 13 - 7
 #define SM_Y3 SM_Y2 + 5 * 13
+#endif
 #define SM_H3 3 * 13 - 7
 
 #define CTL_X 24
@@ -98,7 +132,11 @@ typedef void (*MenuFunc)(int temp1);
 typedef struct
 {
 	int active;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	char string[80]; // S3DNA RESTORATION
+#else
 	char string[36];
+#endif
 	MenuFunc routine;
 } CP_itemtype;
 
@@ -209,7 +247,7 @@ enum
 	loadgame,
 	savegame,
 //changeview,
-#ifdef UPLOAD
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 	readthis,
 #endif
 	viewscores,
@@ -224,6 +262,9 @@ typedef struct
 {
 	int kill, secret, treasure;
 	long time;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	long par;
+#endif
 } LRstruct;
 
 extern LRstruct LevelRatios[];

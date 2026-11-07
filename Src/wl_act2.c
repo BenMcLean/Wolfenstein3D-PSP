@@ -21,6 +21,21 @@
 =============================================================================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - Single table, no difficulty-dependent hit points
+static const int starthitpoints[NUMENEMIES] =
+	{6,   // sheeps
+	 12,  // ostriches
+	 25,  // antelopes
+	 1,   // goats
+	 18,  // oxen
+	 150, // Carl
+	 350, // Melvin
+	 300, // Ginny
+	 400, // Kerry
+	 450, // Ernie
+	 500  // Burt
+	};
+#else
 static const int starthitpoints[4][NUMENEMIES] =
 	//
 	// BABY MODE
@@ -139,7 +154,16 @@ static const int starthitpoints[4][NUMENEMIES] =
 			1300, // en_will,
 			1600  // en_death
 		}};
+#endif /* GAMEVER_NOAH3D */
 
+// PSP_DEVIATION: S3DNA RESTORATION - starthitpoints isn't difficulty dependent
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define STARTHITPOINTS(which) starthitpoints[which]
+#else
+#define STARTHITPOINTS(which) starthitpoints[gamestate.difficulty][which]
+#endif
+
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - WL_FSMOK.C is not included for S3DNA
 /*
 =================
 =
@@ -168,6 +192,8 @@ void A_Smoke(objtype *ob)
 
 	new->flags = FL_NEVERMARK;
 }
+
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ===================
@@ -235,6 +261,10 @@ void T_Projectile(objtype *ob)
 
 	if (!ProjectileTryMove(ob))
 	{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		PlaySoundLocActor(MISSILEHITSND, ob);
+		ob->state = s_cocohit;
+#else
 		if (ob->obclass == rocketobj)
 		{
 			PlaySoundLocActor(MISSILEHITSND, ob);
@@ -249,6 +279,7 @@ void T_Projectile(objtype *ob)
 #endif
 		else
 			ob->state = s_none; // mark for removal
+#endif /* GAMEVER_NOAH3D */
 
 		return;
 	}
@@ -260,6 +291,11 @@ void T_Projectile(objtype *ob)
 		case needleobj:
 			damage = (US_RndT() >> 3) + 20;
 			break;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		case rocketobj:
+			damage = (US_RndT() >> 3) + 30;
+			break;
+#else
 		case rocketobj:
 		case hrocketobj:
 		case sparkobj:
@@ -268,6 +304,7 @@ void T_Projectile(objtype *ob)
 		case fireobj:
 			damage = (US_RndT() >> 3);
 			break;
+#endif
 		default:
 			return;
 		}
@@ -297,6 +334,60 @@ void T_Projectile(objtype *ob)
 ===============
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - Spawn position and ambush flag are determined by the caller
+void SpawnStand(enemy_t which, int tilex, int tiley, int dir, boolean ambush)
+{
+	switch (which)
+	{
+	case en_guard:
+		SpawnNewObj(tilex, tiley, s_grdstand);
+		new->speed = SPDPATROL;
+		if (!loadedgame)
+			gamestate.killtotal++;
+		break;
+
+	case en_officer:
+		SpawnNewObj(tilex, tiley, s_ofcstand);
+		new->speed = SPDPATROL;
+		if (!loadedgame)
+			gamestate.killtotal++;
+		break;
+
+	case en_mutant:
+		SpawnNewObj(tilex, tiley, s_mutstand);
+		new->speed = SPDPATROL;
+		if (!loadedgame)
+			gamestate.killtotal++;
+		break;
+
+	case en_ss:
+		SpawnNewObj(tilex, tiley, s_ssstand);
+		new->speed = SPDPATROL;
+		if (!loadedgame)
+			gamestate.killtotal++;
+		break;
+
+	case en_dog:
+		SpawnNewObj(tilex, tiley, s_dogstand);
+		new->speed = SPDDOG;
+		if (!loadedgame)
+			gamestate.killtotal++;
+		break;
+
+	default:
+		break;
+	}
+
+	if (ambush)
+		new->flags |= FL_AMBUSH;
+
+	new->obclass = guardobj + which;
+	new->hitpoints = starthitpoints[which];
+	new->dir = dir * 2;
+	new->flags |= FL_SHOOTABLE;
+}
+
+#else
 void SpawnStand(enemy_t which, int tilex, int tiley, int dir)
 {
 	word *map, tile = 0;
@@ -452,6 +543,8 @@ void SpawnPatrol(enemy_t which, int tilex, int tiley, int dir)
 	actorat[new->tilex][new->tiley] = new->id | 0x8000;
 }
 
+#endif /* GAMEVER_NOAH3D */
+
 /*
 ==================
 =
@@ -462,6 +555,9 @@ void SpawnPatrol(enemy_t which, int tilex, int tiley, int dir)
 
 void A_DeathScream(objtype *ob)
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	PlaySoundLocActor(D_EDIESND, ob);
+#else
 #ifndef SPEAR
 	if (mapon == 9 && !US_RndT())
 #else
@@ -561,6 +657,7 @@ void A_DeathScream(objtype *ob)
 	default:
 		break;
 	}
+#endif /* GAMEVER_NOAH3D */
 }
 
 /*
@@ -742,9 +839,11 @@ void T_Shoot(objtype *ob)
 	case schabbobj:
 		PlaySoundLocActor(SCHABBSTHROWSND, ob);
 		break;
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no fake hitler
 	case fakeobj:
 		PlaySoundLocActor(FLAMETHROWERSND, ob);
 		break;
+#endif
 #endif
 	default:
 		PlaySoundLocActor(NAZIFIRESND, ob);
@@ -1242,7 +1341,7 @@ void SpawnBoss(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = bossobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_boss];
+	new->hitpoints = STARTHITPOINTS(en_boss);
 	new->dir = south;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
@@ -1263,13 +1362,14 @@ void SpawnGretel(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = gretelobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_gretel];
+	new->hitpoints = STARTHITPOINTS(en_gretel);
 	new->dir = north;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
 		gamestate.killtotal++;
 }
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts/fake hitler
 /*
 ===============
 =
@@ -1304,6 +1404,7 @@ void SpawnGhosts(int which, int tilex, int tiley)
 	if (!loadedgame)
 		gamestate.killtotal++;
 }
+#endif
 
 /*
 ===============
@@ -1324,7 +1425,7 @@ void SpawnSchabbs(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = schabbobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_schabbs];
+	new->hitpoints = STARTHITPOINTS(en_schabbs);
 	new->dir = south;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
@@ -1350,7 +1451,7 @@ void SpawnGift(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = giftobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_gift];
+	new->hitpoints = STARTHITPOINTS(en_gift);
 	new->dir = north;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
@@ -1376,7 +1477,7 @@ void SpawnFat(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = fatobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_fat];
+	new->hitpoints = STARTHITPOINTS(en_fat);
 	new->dir = south;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
@@ -1405,7 +1506,11 @@ void T_SchabbThrow(objtype *ob)
 	iangle = angle / (PI * 2) * ANGLES;
 
 	GetNewActor();
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	new->state = s_coconut;
+#else
 	new->state = s_needle1;
+#endif
 	new->ticcount = 1;
 
 	new->tilex = ob->tilex;
@@ -1445,7 +1550,11 @@ void T_GiftThrow(objtype *ob)
 	iangle = angle / (PI * 2) * ANGLES;
 
 	GetNewActor();
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	new->state = s_coconut;
+#else
 	new->state = s_rocket;
+#endif
 	new->ticcount = 1;
 
 	new->tilex = ob->tilex;
@@ -1734,6 +1843,7 @@ void T_Fat(objtype *ob)
 =============================================================================
 */
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts/fake hitler
 /*
 ===============
 =
@@ -1759,6 +1869,7 @@ void SpawnFakeHitler(int tilex, int tiley)
 	if (!loadedgame)
 		gamestate.killtotal++;
 }
+#endif
 
 /*
 ===============
@@ -1779,7 +1890,7 @@ void SpawnHitler(int tilex, int tiley)
 	new->speed = SPDPATROL;
 
 	new->obclass = mechahitlerobj;
-	new->hitpoints = starthitpoints[gamestate.difficulty][en_hitler];
+	new->hitpoints = STARTHITPOINTS(en_hitler);
 	new->dir = south;
 	new->flags |= FL_SHOOTABLE | FL_AMBUSH;
 	if (!loadedgame)
@@ -1826,9 +1937,14 @@ void A_MechaSound(objtype *ob)
 
 void A_Slurpie(objtype *ob)
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	SD_PlaySound(D_EDIESND);
+#else
 	SD_PlaySound(SLURPIESND);
+#endif
 }
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts/fake hitler
 /*
 =================
 =
@@ -1867,7 +1983,9 @@ void T_FakeFire(objtype *ob)
 
 	PlaySoundLocActor(FLAMETHROWERSND, new);
 }
+#endif
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts/fake hitler
 /*
 =================
 =
@@ -1927,6 +2045,7 @@ void T_Fake(objtype *ob)
 			return; // object is blocked in
 	}
 }
+#endif
 
 #endif
 /*
@@ -2096,6 +2215,7 @@ void T_Chase(objtype *ob)
 	}
 }
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts/fake hitler
 /*
 =================
 =
@@ -2143,6 +2263,7 @@ void T_Ghosts(objtype *ob)
 			return; // object is blocked in
 	}
 }
+#endif
 
 /*
 =================
@@ -2214,6 +2335,7 @@ void T_DogChase(objtype *ob)
 }
 
 #ifndef SPEAR
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no BJ victory run
 /*
 ============================================================================
 
@@ -2317,8 +2439,136 @@ void T_BJDone(objtype *ob)
 {
 	playstate = ex_victorious; // exit castle tile
 }
+#endif /* GAMEVER_NOAH3D */
 
 //===========================================================================
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - player flame/missile projectiles
+/*
+=============================================================================
+
+						 PLAYER PROJECTILES
+
+=============================================================================
+*/
+
+#define MINMISSILEDIST 0x8000l
+
+// S3DNA RESTORATION - Has code found in TryMove and ProjectileTryMove
+boolean MissileTryMove(objtype *ob)
+{
+	int xl, yl, xh, yh, x, y;
+	objtype *check;
+	long deltax, deltay;
+
+	xl = (ob->x - PROJSIZE) >> TILESHIFT;
+	yl = (ob->y - PROJSIZE) >> TILESHIFT;
+
+	xh = (ob->x + PROJSIZE) >> TILESHIFT;
+	yh = (ob->y + PROJSIZE) >> TILESHIFT;
+
+	//
+	// check for solid walls
+	//
+	for (y = yl; y <= yh; y++)
+		for (x = xl; x <= xh; x++)
+		{
+			if (actorat[x][y] && !(actorat[x][y] & 0x8000))
+				return false;
+		}
+
+	//
+	// check for actors
+	//
+	if (yl > 0)
+		yl--;
+	if (yh < MAPSIZE - 1)
+		yh++;
+	if (xl > 0)
+		xl--;
+	if (xh < MAPSIZE - 1)
+		xh++;
+
+	for (y = yl; y <= yh; y++)
+		for (x = xl; x <= xh; x++)
+		{
+			if (!(actorat[x][y] & 0x8000))
+				continue;
+			check = &objlist[actorat[x][y] & ~0x8000];
+			if (check > objlist && (check->flags & FL_SHOOTABLE))
+			{
+				deltax = ob->x - check->x;
+				if (deltax < -MINMISSILEDIST || deltax > MINMISSILEDIST)
+					continue;
+				deltay = ob->y - check->y;
+				if (deltay < -MINMISSILEDIST || deltay > MINMISSILEDIST)
+					continue;
+
+				if (ob->obclass == flameobj)
+				{
+					DamageActor(check, (US_RndT() & 0xF) + 1);
+
+					// check for pass through
+					if (!(check->flags & FL_SHOOTABLE))
+						return true;
+				}
+				else if (ob->obclass == missileobj)
+				{
+					DamageActor(check, ((US_RndT() & 3) + 1) << 4);
+
+					// check for pass through
+					if (!(check->flags & FL_SHOOTABLE))
+						return true;
+				}
+
+				return false;
+			}
+		}
+
+	return true;
+}
+
+// S3DNA RESTORATION - Looks based on T_Projectile
+void T_Missile(objtype *ob)
+{
+	long deltax, deltay;
+	long speed;
+
+	speed = (long)ob->speed * tics;
+
+	deltax = FixedByFrac(speed, costable[ob->angle]);
+	deltay = -FixedByFrac(speed, sintable[ob->angle]);
+
+	if (deltax > 0x10000l)
+		deltax = 0x10000l;
+	if (deltay > 0x10000l)
+		deltay = 0x10000l;
+
+	ob->x += deltax;
+	ob->y += deltay;
+
+	if (!MissileTryMove(ob))
+	{
+		if (ob->obclass == flameobj)
+		{
+			PlaySoundLocActor(D_COCHITSND, ob);
+			ob->state = s_fexplode1;
+		}
+		else if (ob->obclass == missileobj)
+		{
+			PlaySoundLocActor(D_WATHITSND, ob);
+			ob->state = s_mexplode1;
+		}
+		else
+			ob->state = s_none; // mark for removal
+
+		return;
+	}
+
+	ob->tilex = ob->x >> TILESHIFT;
+	ob->tiley = ob->y >> TILESHIFT;
+}
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ===============
@@ -2361,6 +2611,11 @@ boolean CheckPosition(objtype *ob)
 
 void A_StartDeathCam(objtype *ob)
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	FinishPaletteShifts();
+	NewState(player, s_deathcam);
+	gamestate.victoryflag = true;
+#else
 	long dx, dy;
 	float fangle;
 	long xmove, ymove;
@@ -2450,6 +2705,7 @@ void A_StartDeathCam(objtype *ob)
 		break;
 	}
 	*/
+#endif /* GAMEVER_NOAH3D */
 }
 
 #endif

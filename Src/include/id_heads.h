@@ -25,7 +25,12 @@ typedef enum
 
 /* ------------------------------------------------------------------------ */
 
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: Super 3-D Noah's Ark */
+
+#include "gfxv_n3d.h"
+#include "audion3d.h"
+
+#elif !defined(SPEAR)
 
 #ifndef UPLOAD
 #include "gfxv_wl6.h"

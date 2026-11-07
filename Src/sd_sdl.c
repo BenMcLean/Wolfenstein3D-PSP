@@ -94,6 +94,480 @@ static byte AdlibBlock;
 static byte *AdlibData;
 static int AdlibLength;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - MIDI to AdLib translation, from ID_SD.C of the wolf3d recreation
+// The recreated code wrote straight to the AdLib card, here it feeds the OPL emulator
+#define alOut(n, b) OPLWrite(OPL, (n), (b))
+
+#define alChar 0x20
+#define alScale 0x40
+#define alAttack 0x60
+#define alSus 0x80
+#define alWave 0xe0
+#define alFreqL 0xa0
+#define alFreqH 0xb0
+#define alFeedCon 0xc0
+#define alEffects 0xbd
+
+typedef struct
+{
+	byte mChar, cChar,
+		mScale, cScale,
+		mAttack, cAttack,
+		mSustain, cSustain,
+		mWave, cWave,
+		mFeedConn;
+} inst_t;
+
+static const byte carriers[9] = {3, 4, 5, 11, 12, 13, 19, 20, 21},
+				  modifiers[9] = {0, 1, 2, 8, 9, 10, 16, 17, 18};
+
+static int midiError = 0;
+static float midiTimeScale = 1.86;
+static byte *midiData, *midiDataStart;
+static byte midiRunningStatus;
+static longword midiLength, midiDeltaTime;
+static boolean midiOn = false;
+
+static longword
+MIDI_VarLength(void)
+{
+	longword value = 0;
+	while (*midiData & 0x80)
+		value = (value << 7) + (*midiData++ & 0x7F);
+	value = (value << 7) + *midiData++;
+	return value;
+}
+
+
+
+static word	NoteTable[12] = {0x157,0x16b,0x181,0x198,0x1b0,0x1ca,0x1e5,0x202,0x220,0x241,0x263,0x287};
+
+static byte	drums = 0;
+
+static inst_t	instrument[14] = {
+	{0x21, 0x31, 0x4f, 0x00, 0xf2, 0xd2, 0x52, 0x73, 0x00, 0x00, 0x06},
+	{0x01, 0x31, 0x4f, 0x04, 0xf0, 0x90, 0xff, 0x0f, 0x00, 0x00, 0x06},
+	{0x31, 0x22, 0x10, 0x04, 0x83, 0xf4, 0x9f, 0x78, 0x00, 0x00, 0x0a},
+	{0x11, 0x31, 0x05, 0x00, 0xf9, 0xf1, 0x25, 0x34, 0x00, 0x00, 0x0a},
+	{0x31, 0x61, 0x1c, 0x80, 0x41, 0x92, 0x0b, 0x3b, 0x00, 0x00, 0x0e},
+	{0x21, 0x21, 0x19, 0x80, 0x43, 0x85, 0x8c, 0x2f, 0x00, 0x00, 0x0c},
+	{0x21, 0x24, 0x94, 0x05, 0xf0, 0x90, 0x09, 0x0a, 0x00, 0x00, 0x0a},
+	{0x21, 0xa2, 0x83, 0x8d, 0x74, 0x65, 0x17, 0x17, 0x00, 0x00, 0x07},
+	{0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x07, 0x07, 0x00, 0x00, 0x07},
+	{0x10, 0x00, 0x00, 0x00, 0xd8, 0x87, 0x4a, 0x3c, 0x00, 0x00, 0x00},
+	{0x00, 0x00, 0x11, 0x11, 0xfa, 0xfa, 0xb5, 0xb5, 0x00, 0x00, 0x00},
+	{0x00, 0x00, 0x00, 0x00, 0xf8, 0xf8, 0x88, 0xb5, 0x00, 0x00, 0x00},
+	{0x15, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+	{0x21, 0x11, 0x4c, 0x00, 0xf1, 0xf2, 0x63, 0x72, 0x00, 0x00, 0xc0}
+};
+
+
+
+static void
+MIDI_SkipMetaEvent(void)
+{
+	longword length = MIDI_VarLength();
+	midiData += length;
+}
+
+static void
+MIDI_NoteOff(int channel, int note, int velocity)
+{
+	unsigned	fnumber;
+	byte	octave;
+	if (channel == 9)
+	{
+		switch (note)
+		{
+		case 0x23:
+		case 0x24:
+			drums &= 0xef;
+			break;
+		case 0x26:
+		case 0x28:
+			drums &= 0xf7;
+			break;
+		case 0x2a:
+			drums &= 0xfe;
+			break;
+		default:
+			midiError = -11;
+		}
+		alOut(alEffects,alChar|drums);
+		return;
+	}
+
+	fnumber = NoteTable[note%12];
+	octave = ((note/12)&7)<<2;
+	alOut(alFreqL + 1 + channel, fnumber&0xFF);
+	alOut(alFreqH + 1 + channel, octave+((fnumber>>8)&3));
+}
+
+static void
+MIDI_NoteOn(int channel, byte note, byte velocity)
+{
+	unsigned	fnumber;
+	int	octave;
+	if (velocity)
+	{
+		if (channel == 9)
+		{
+			switch (note)
+			{
+			case 0x23:
+			case 0x24:
+				drums |= 0x10;
+				break;
+			case 0x26:
+				drums |= 0x8;
+				break;
+			case 0x28:
+				drums |= 0x4;
+				break;
+			case 0x2a:
+				drums |= 1;
+				break;
+			default:
+				midiError = -11;
+			}
+			alOut(alEffects,alChar|drums);
+		}
+		else
+		{
+			fnumber = NoteTable[note%12];
+			octave = note/12;
+			alOut(alFreqL + 1 + channel, fnumber&0xFF);
+			alOut(alFreqH + 1 + channel, alChar|(octave<<2)|((fnumber>>8)&3));
+		}
+	}
+	else
+		MIDI_NoteOff (channel,note,velocity);
+}
+
+static void
+MIDI_ControllerChange(int channel, int id, int value)
+{
+}
+
+static void
+MIDI_ProgramChange(int channel, int id)
+{
+	// S3DNA RESTORATION - While an inst_t pointer can be used with direct
+	// access to all fields, based on generated machine code it looks like
+	// this wasn't the way the code was written
+	byte	*inst;
+	if (channel == 9)
+	{
+		int	note;
+		unsigned	fnumber;
+		int	octave;
+
+		inst = (byte *)&instrument[9];
+		alOut(modifiers[6]+alChar, *inst++);
+		alOut(carriers[6]+alChar, *inst++);
+		alOut(modifiers[6]+alScale, *inst++);
+		alOut(carriers[6]+alScale, *inst++);
+		alOut(modifiers[6]+alAttack, *inst++);
+		alOut(carriers[6]+alAttack, *inst++);
+		alOut(modifiers[6]+alSus, *inst++);
+		alOut(carriers[6]+alSus, *inst++);
+		alOut(modifiers[6]+alWave, *inst++);
+		alOut(carriers[6]+alWave, *inst++);
+
+		alOut(alFeedCon+6, *inst);
+
+		note = 24;
+		fnumber = NoteTable[note%12];
+		octave = ((note/12)&7)<<2;
+		alOut(alFreqL+6,fnumber&0xFF);
+		alOut(alFreqH+6,octave+((fnumber>>8)&3));
+		note = 24;
+		fnumber = NoteTable[note%12];
+		octave = ((note/12)&7)<<2;
+		alOut(alFreqL+7,fnumber&0xFF);
+		alOut(alFreqH+7,octave+((fnumber>>8)&3));
+		note = 24;
+		fnumber = NoteTable[note%12];
+		octave = ((note/12)&7)<<2;
+		alOut(alFreqL+8,fnumber&0xFF);
+		alOut(alFreqH+8,octave+((fnumber>>8)&3));
+
+		inst = (byte *)&instrument[10];
+		alOut(0x31,*inst); inst += 2;
+		alOut(0x51,*inst); inst += 2;
+		alOut(0x71,*inst); inst += 2;
+		alOut(0x91,*inst); inst += 2;
+
+		alOut(0xF1,*inst);
+		alOut(0xC7,0);
+
+		inst = (byte *)&instrument[12];
+		alOut(0x32,*inst); inst += 2;
+		alOut(0x52,*inst); inst += 2;
+		alOut(0x72,*inst); inst += 2;
+		alOut(0x92,*inst); inst += 2;
+
+		alOut(0xF2,*inst);
+
+		inst = (byte *)&instrument[11];
+		alOut(0x34,*inst); inst += 2;
+		alOut(0x54,*inst); inst += 2;
+		alOut(0x74,*inst); inst += 2;
+		alOut(0x94,*inst); inst += 2;
+
+		alOut(0xF4,*inst);
+		alOut(0xC8,0);
+
+		inst = (byte *)&instrument[10];
+		alOut(0x35,*inst); inst += 2;
+		alOut(0x55,*inst); inst += 2;
+		alOut(0x75,*inst); inst += 2;
+		alOut(0x95,*inst); inst += 2;
+
+		alOut(0xF5,*inst);
+
+		return;
+	}
+
+	if (channel < 5)
+	{
+		switch (id & 0xF8)
+		{
+		case 0:
+			inst = (byte *)&instrument[0];
+			break;
+		case 8:
+			inst = (byte *)&instrument[8];
+			break;
+		case 16:
+			inst = (byte *)&instrument[1];
+			break;
+		case 24:
+			inst = (byte *)&instrument[0];
+			break;
+		case 32:
+			inst = (byte *)&instrument[2];
+			break;
+		case 40:
+		case 48:
+			inst = (byte *)&instrument[0];
+			break;
+		case 56:
+		case 64:
+			inst = (byte *)&instrument[6];
+			break;
+		case 72:
+			inst = (byte *)&instrument[7];
+			break;
+		case 80:
+		case 88:
+		case 96:
+			inst = (byte *)&instrument[0];
+			break;
+		case 104:
+		case 112:
+		case 120:
+			inst = (byte *)&instrument[8];
+			break;
+		default:
+			midiError = -8;
+			return;
+		}
+		
+		alOut(modifiers[channel+1]+alChar, *inst++);
+		alOut(carriers[channel+1]+alChar, *inst++);
+		alOut(modifiers[channel+1]+alScale, *inst++);
+		alOut(carriers[channel+1]+alScale, *inst++);
+		alOut(modifiers[channel+1]+alAttack, *inst++);
+		alOut(carriers[channel+1]+alAttack, *inst++);
+		alOut(modifiers[channel+1]+alSus, *inst++);
+		alOut(carriers[channel+1]+alSus, *inst++);
+		alOut(modifiers[channel+1]+alWave, *inst++);
+		alOut(carriers[channel+1]+alWave, *inst++);
+
+		alOut(alFeedCon+channel, *inst);
+	}
+}
+
+static void
+MIDI_ChannelPressure(int channel, int id)
+{
+}
+
+static void
+MIDI_ProcessEvent(byte event)
+{
+	byte	note,velocity,id,value;
+	switch (event&0xF0)
+	{
+	case 0x80:
+		note = *midiData++;
+		velocity = *midiData++;
+		MIDI_NoteOff(event&0xF,note,velocity);
+		break;
+	case 0x90:
+		note = *midiData++;
+		velocity = *midiData++;
+		MIDI_NoteOn(event&0xF,note,velocity);
+		break;
+	case 0xB0:
+		id = *midiData++;
+		value = *midiData++;
+		MIDI_ControllerChange(event&0xF,id,value);
+		break;
+	case 0xC0:
+		value = *midiData++;
+		MIDI_ProgramChange(event&0xF,value);
+		break;
+	case 0xD0:
+		value = *midiData++;
+		MIDI_ChannelPressure(event&0xF,value);
+		break;
+	default:
+		midiError = -7;
+		break;
+	}
+}
+
+static void
+MIDI_DoEvent(void)
+{
+	byte	event;
+	longword	length;
+	longword	tempo;
+
+	event = *midiData++;
+	if (!(event & 0x80))
+	{
+		if (!(midiRunningStatus | 0x00))
+			return;
+
+		midiData--;
+		MIDI_ProcessEvent(midiRunningStatus);
+	}
+	else if (event < 0xF0)
+	{
+		midiRunningStatus = event;
+		MIDI_ProcessEvent(midiRunningStatus);
+	}
+	else if (event == 0xF0)
+	{
+		midiRunningStatus = 0;
+		midiError = -4;
+	}
+	else if (event == 0xF7)
+	{
+		midiRunningStatus = 0;
+		midiError = -5;
+	}
+	else if (event == 0xFF)
+	{
+		midiRunningStatus = 0;
+		event = *midiData++;
+		switch (event)
+		{
+		case 0x51:
+			length = MIDI_VarLength();
+			tempo = ((long)(*midiData)<<16) + (long)((*(midiData+1))<<8) + (*(midiData+2));
+			midiTimeScale = (double)tempo/2.74176e5;
+			midiTimeScale *= 1.1;
+			midiData += length;
+			break;
+		case 0x2F:
+			midiData = midiDataStart;
+			midiDeltaTime = 0;
+			break;
+		default:
+			MIDI_SkipMetaEvent();
+			break;
+		}
+	}
+	else
+		midiError = -6;
+}
+
+static void
+MIDI_IRQService(void)
+{
+	int	maxevent = 0;
+
+	if (!midiOn)
+		return;
+
+	if (midiDeltaTime)
+	{
+		midiDeltaTime--;
+		return;
+	}
+
+	while (!midiDeltaTime && (maxevent++ < 32))
+	{
+		MIDI_DoEvent();
+		midiDeltaTime = MIDI_VarLength();
+	}
+
+	if (maxevent >= 32)
+		midiError = -1;
+	else if (midiDeltaTime & 0xFFFF0000)
+	{
+		midiError = -2;
+		return;
+	}
+
+	midiDeltaTime = midiDeltaTime * midiTimeScale;
+}
+
+// PSP_DEVIATION: reads of the (big endian) MIDI header, byte by byte since the chunk isn't necessarily aligned
+static unsigned int MIDI_ReadBE(const byte *p, int bytes)
+{
+	unsigned int v = 0;
+
+	while (bytes--)
+		v = (v << 8) | *p++;
+	return v;
+}
+
+// Called (from the audio thread) when new music has been selected
+static void MIDI_Start(MusicGroup *music)
+{
+	byte *seqPtr = (byte *)music->values;
+	unsigned int i;
+
+	midiOn = false;
+	midiError = 0;
+
+	if (memcmp(seqPtr, "MThd", 4))
+		return; // MIDI header expected
+	if (MIDI_ReadBE(seqPtr + 8, 2) != 0 || MIDI_ReadBE(seqPtr + 10, 2) != 1)
+		return; // invalid or unsupported MIDI file format
+
+	seqPtr += MIDI_ReadBE(seqPtr + 4, 4) + 8;
+	if (memcmp(seqPtr, "MTrk", 4))
+		return; // MIDI track header expected
+	i = MIDI_ReadBE(seqPtr + 4, 4);
+	if (!i)
+		return; // MIDI track is 0 length
+
+	seqPtr += 8;
+	midiData = seqPtr;
+	midiDataStart = seqPtr;
+	midiLength = i;
+	midiDeltaTime = 0;
+	midiDeltaTime = MIDI_VarLength();
+	if (midiDeltaTime & 0xFFFF0000)
+	{
+		midiError = -2;
+		return;
+	}
+
+	midiRunningStatus = 0;
+	MIDI_ProgramChange(9, 0);
+	alOut(alEffects, alChar);
+	drums = 0;
+	midiOn = true;
+}
+#endif /* GAMEVER_NOAH3D */
+
 static void SetSoundLoc(fixed gx, fixed gy);
 static boolean SD_PlayDirSound(soundnames sound, fixed gx, fixed gy);
 
@@ -124,7 +598,9 @@ void FillSoundBuff(void)
 {
 	int i, j, snd;
 	short int samp;
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: 'dat' is only used by the AdLib music path (Noah3D uses MIDI)
 	word dat;
+#endif
 
 	AdLibSound *AdlibSnd;
 	Instrument *inst;
@@ -141,8 +617,8 @@ void FillSoundBuff(void)
 #define alScale 0x40
 #define alAttack 0x60
 #define alSus 0x80
-#define alFeedCon 0xC0
-#define alWave 0xE0
+#define alFeedCon 0xc0 // PSP_DEVIATION: lowercase hex to match earlier identical definition (no redefinition warning)
+#define alWave 0xe0
 
 			OPLWrite(OPL, 0 + alChar, 0);
 			OPLWrite(OPL, 0 + alScale, 0);
@@ -181,12 +657,23 @@ void FillSoundBuff(void)
 		if (NewMusic != -1)
 		{
 			NewMusic = -1;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the music is MIDI
+			MIDI_Start(Music);
+#else
 			MusicLength = Music->length;
-			MusicData = Music->values;
+			MusicData = (word *)((byte *)Music + offsetof(MusicGroup, values)); // PSP_DEVIATION: avoids -Waddress-of-packed-member
 			MusicCount = 0;
+#endif
 		}
 		for (i = 0; i < 4; i++)
 		{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - two ticks of the 700Hz sequencer per step
+			if (sqActive)
+			{
+				MIDI_IRQService();
+				MIDI_IRQService();
+			}
+#else
 			if (sqActive)
 			{
 				while (MusicCount <= 0)
@@ -202,7 +689,7 @@ void FillSoundBuff(void)
 				}
 				MusicCount -= 2;
 			}
-
+#endif
 			if (AdlibPlaying != -1)
 			{
 				if (AdlibLength == 0)
@@ -662,7 +1149,7 @@ void SD_StartMusic(int music)
 
 	CA_CacheAudioChunk(music);
 
-	if (MusicMode != sdm_Off)
+	if (MusicMode != smm_Off) // PSP_DEVIATION: was sdm_Off (wrong enum, same value 0)
 	{
 		SD_MusicOff();
 		SD_MusicOn();

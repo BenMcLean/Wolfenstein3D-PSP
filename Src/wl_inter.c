@@ -100,6 +100,270 @@ void EndSpear()
 ==================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+// *** S3DNA RESTORATION ***
+// PSP_DEVIATION: states are indices into gamestates[] and there is no page flipping
+// or video hardware access, so this is adapted from the original CharacterCast
+static const int caststate[] = {s_dogchase1, s_grdchase1, s_ofcchase1, s_sschase1,
+								s_mutchase1, s_bosschase1, s_schabbchase1, s_gretelchase1,
+								s_giftchase1, s_fatchase1, s_mechachase1, s_hitlerchase1};
+
+static char *casttext[] = {"Goat", "Sheep", "Ostrich", "Antelope",
+						   "Ox", "Carl the Camel", "Melvin the Monkey", "Ginny the Giraffe",
+						   "Kerry the Kangaroo", "Ernie the Elephant", "Hiding Burt", "Burt the Bear"};
+
+static const int castsound[] = {D_GOATSND, D_SHEEPSND, D_OSTRCHSND, D_ANTLPESND,
+								D_OXSND, D_CAMELSND, D_MONKEYSND, D_GIRAFESND,
+								D_KANGROSND, D_ELPHNTSND, D_BEARSND, D_BEARSND};
+
+void CharacterCast(void)
+{
+	int en, count, cycle; // PSP_DEVIATION: removed unused 'i'
+	int state;
+
+	ClearMemory();
+	StartCPMusic(NOAH02_MUS);
+	gamestate.mapon = 30;
+	SetupGameLevel();
+	CA_CacheGrChunk(STARTFONT + 1);
+	SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+	PreloadGraphics();
+
+	DrawPlayBorder();
+	VW_Bar(0, 160, 320, 40, VIEWCOLOR);
+
+	en = 0;
+	anglefrac = 0;
+	WindowX = 0;
+	WindowW = 320 - 16;
+	fontnumber = 1;
+
+	lasttimecount = 0;
+	set_TimeCount(0);
+	IN_StartAck();
+
+	do
+	{
+		state = caststate[en];
+		count = gamestates[state].tictime;
+		cycle = 0;
+
+	nexttic:
+		if (cycle == 0)
+			SD_PlaySound(castsound[en]);
+
+		CalcTics();
+		cycle += 2 * tics;
+		if (cycle > 224)
+		{
+			if (++en >= 12)
+				en = 0;
+			continue;
+		}
+
+		if (!(--count))
+		{
+			state = gamestates[state].next;
+			count = gamestates[state].tictime;
+		}
+
+		memset(spotvis, 0, sizeof(spotvis));
+
+		PollControls();
+		WallRefresh();
+		if (!nofloors)
+			DrawPlanes();
+		DrawScaleds();
+		SimpleScaleShape(viewwidth / 2, gamestates[state].shapenum, cycle / 2 + 24);
+		VW_Bar(0, 160, 320, 40, VIEWCOLOR);
+		PrintY = 168;
+		US_CPrintLine(casttext[en]);
+
+		VW_UpdateScreen();
+		frameon++;
+
+		if (screenfaded)
+			VW_FadeIn();
+
+		if ((cycle >= 16) && (Keyboard[sc_Space] || buttonstate[bt_attack] || buttonstate[bt_use]))
+		{
+			if (++en >= 12)
+				en = 0;
+			continue;
+		}
+
+		if (Keyboard[sc_Escape] || Keyboard[sc_Q] || Keyboard[sc_Enter])
+			break;
+
+		goto nexttic;
+
+	} while (en < 12);
+
+	CA_UnCacheGrChunk(STARTFONT + 1);
+	StopMusic();
+	fontnumber = 0;
+	VW_FadeOut();
+}
+
+#endif /* GAMEVER_NOAH3D */
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void Victory (void)
+{
+
+	// *** SHAREWARE V1.0 APOGEE + S3DNA RESTORATION ***
+	long	sec,parsec;
+	// *** SHAREWARE V1.0 APOGEE + S3DNA RESTORATION ***
+	int i,hr,min,kr,sr,tr,x;
+	char tempstr[8];
+
+// *** S3DNA RESTORATION ***
+#define RATIOX	9
+#define RATIOY	12
+#define TIMEX	23
+#define TIMEY	9
+#define PARTIMEX	23
+#define PARTIMEY	7
+
+
+
+	// *** S3DNA RESTORATION ***
+	StartCPMusic (NOAH07_MUS);
+	ClearSplitVWB ();
+	CacheLump(LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+	// *** S3DNA RESTORATION ***
+
+
+	// *** S3DNA RESTORATION ***
+	VW_Bar (0,0,320,200-STATUSLINES,218);
+
+	// *** S3DNA RESTORATION ***
+	VWB_DrawPic (8,8,L_BJWINSPIC);
+
+	VWB_DrawPic (104,32,W_RATINGPIC);
+	VWB_DrawPic (120,56,W_PARPIC);
+	VWB_DrawPic (112,72,W_TIMEPIC);
+
+	VWB_DrawPic (104,96,W_KILLSPIC);
+	Write(33,12,"%");
+
+	VWB_DrawPic (128,112,W_TREASURESPIC);
+	Write(33,14,"%");
+
+	VWB_DrawPic (96,128,W_SECRETSPIC);
+	Write(33,16,"%");
+
+
+	// *** S3DNA RESTORATION ***
+	for (kr = sr = tr = sec = parsec = i = 0;i < 30;i++)
+	{
+		sec += LevelRatios[i].time;
+		kr += LevelRatios[i].kill;
+		sr += LevelRatios[i].secret;
+		tr += LevelRatios[i].treasure;
+		// *** S3DNA RESTORATION ***
+		parsec += LevelRatios[i].par;
+	}
+
+	// *** S3DNA RESTORATION ***
+	min = parsec/60;
+	parsec %= 60;
+	hr = min/60;
+	min %= 60;
+	if (hr > 9)
+	{
+		hr = 9;
+		min = parsec = 99;
+	}
+	i = PARTIMEX*8;
+	VWB_DrawPic (i,PARTIMEY*8,L_NUM0PIC+hr);
+	i += 2*8;
+	Write (i/8,PARTIMEY,":");
+	i += 1*8;
+	VWB_DrawPic (i,PARTIMEY*8,L_NUM0PIC+(min/10));
+	i += 2*8;
+	VWB_DrawPic (i,PARTIMEY*8,L_NUM0PIC+(min%10));
+	i += 2*8;
+	Write (i/8,PARTIMEY,":");
+	i += 1*8;
+	VWB_DrawPic (i,PARTIMEY*8,L_NUM0PIC+(parsec/10));
+	i += 2*8;
+	VWB_DrawPic (i,PARTIMEY*8,L_NUM0PIC+(parsec%10));
+	VW_UpdateScreen ();
+
+	min = sec/60;
+	sec %= 60;
+	// *** S3DNA RESTORATION ***
+	hr = min/60;
+	min %= 60;
+	if (hr > 9)
+	{
+		hr = 9;
+		min = sec = 99;
+	}
+	// *** SHAREWARE V1.0+1.1 APOGEE RESTORATION ***
+
+	// *** S3DNA RESTORATION ***
+	i = TIMEX*8;
+	VWB_DrawPic(i,TIMEY*8,L_NUM0PIC+hr);
+	i += 2*8;
+	Write(i/8,TIMEY,":");
+	i += 1*8;
+	VWB_DrawPic(i,TIMEY*8,L_NUM0PIC+(min/10));
+	i += 2*8;
+	VWB_DrawPic(i,TIMEY*8,L_NUM0PIC+(min%10));
+	i += 2*8;
+	Write(i/8,TIMEY,":");
+	i += 1*8;
+	VWB_DrawPic(i,TIMEY*8,L_NUM0PIC+(sec/10));
+	i += 2*8;
+	VWB_DrawPic(i,TIMEY*8,L_NUM0PIC+(sec%10));
+	VW_UpdateScreen ();
+	// *** S3DNA RESTORATION ***
+	kr /= 30;
+	sr /= 30;
+	tr /= 30;
+
+	itoa(kr,tempstr,10);
+	x=RATIOX+24-strlen(tempstr)*2;
+	Write(x,RATIOY,tempstr);
+
+	itoa(sr,tempstr,10);
+	x=RATIOX+24-strlen(tempstr)*2;
+	Write(x,RATIOY+2,tempstr);
+
+	itoa(tr,tempstr,10);
+	x=RATIOX+24-strlen(tempstr)*2;
+	Write(x,RATIOY+4,tempstr);
+
+
+	// *** SHAREWARE V1.0 APOGEE RESTORATION ***
+//#ifndef UPLOAD
+	// *** S3DNA RESTORATION ***
+
+
+	// *** S3DNA RESTORATION ***
+
+	VW_UpdateScreen ();
+	VW_FadeIn ();
+
+	IN_Ack();
+
+	// *** SHAREWARE/REGISTERED APOGEE RESTORATION ***
+	// This is also skipped in the Apogee EXEs
+	//#ifndef SPEAR
+
+	VW_FadeOut ();
+
+	// *** S3DNA RESTORATION ***
+	UnCacheLump(LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+
+	// *** S3DNA RESTORATION ***
+	CharacterCast();
+
+
+}
+#else
 void Victory()
 {
 #ifndef SPEARDEMO
@@ -237,9 +501,11 @@ void Victory()
 
 #endif /* SPEARDEMO */
 }
+#endif /* GAMEVER_NOAH3D */
 
 /* ======================================================================== */
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - not in S3DNA
 /*
 ==================
 =
@@ -264,9 +530,78 @@ void PG13()
 
 	VW_FadeOut();
 }
+#endif /* GAMEVER_NOAH3D */
 
 //==========================================================================
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void Write(int x,int y,char *string)
+{
+ // *** S3DNA RESTORATION ***
+ int alpha[]={L_NUM0PIC,L_NUM1PIC,L_NUM2PIC,L_NUM3PIC,L_NUM4PIC,L_NUM5PIC,
+	L_NUM6PIC,L_NUM7PIC,L_NUM8PIC,L_NUM9PIC,L_COLONPIC,0,0,0,0,0};
+
+ int i,ox,nx,ny;
+ char ch;
+
+
+ ox=nx=x*8;
+ ny=y*8;
+ for (i=0;i<strlen(string);i++)
+   if (string[i]=='\n')
+   {
+	nx=ox;
+	ny+=16;
+   }
+   else
+   {
+	ch=string[i];
+	if (ch>='a')
+	  ch-=('a'-'A');
+	ch-='0';
+
+	switch(string[i])
+	{
+	 case '!':
+	   VWB_DrawPic(nx,ny,L_EXPOINTPIC);
+	   nx+=8;
+	   continue;
+
+	 // *** SHAREWARE V1.0 APOGEE RESTORATION ***
+	 case '\'':
+	   VWB_DrawPic(nx,ny,L_APOSTROPHEPIC);
+	   nx+=8;
+	   continue;
+
+	 case ' ': break;
+	 case 0x3a:	// ':'
+
+	   VWB_DrawPic(nx,ny,L_COLONPIC);
+	   nx+=8;
+	   continue;
+
+	 case '%':
+	   VWB_DrawPic(nx,ny,L_PERCENTPIC);
+	   break;
+
+	 // *** S3DNA RESTORATION ***
+	 case '-':
+	   VWB_DrawPic(nx,ny,L_MINUSPIC);
+	   nx+=8;
+	   continue;
+
+	 default:
+	  if (ch >= 16)
+	  {
+		sprintf(str,"Write(): Invalid character $%02X!",ch);
+		Quit(str);
+	  }
+	   VWB_DrawPic(nx,ny,alpha[(unsigned char)ch]); // PSP_DEVIATION: cast avoids negative char index
+	}
+	nx+=16;
+   }
+}
+#else
 void Write(int x, int y, char *string)
 {
 	int alpha[] = {L_NUM0PIC, L_NUM1PIC, L_NUM2PIC, L_NUM3PIC, L_NUM4PIC, L_NUM5PIC,
@@ -323,10 +658,29 @@ void Write(int x, int y, char *string)
 			nx += 16;
 		}
 }
+#endif /* GAMEVER_NOAH3D */
 
 //
 // Breathe Mr. BJ!!!
 //
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void BJ_Breathe(void)
+{
+	static int which=0,max=10;
+	int pics[2]={L_GUYPIC,L_GUY2PIC};
+
+
+	if (get_TimeCount()>max)
+	{
+		which^=1;
+		// *** S3DNA RESTORATION ***
+		VWB_DrawPic(8,8,pics[which]);
+		VW_UpdateScreen();
+		set_TimeCount(0);
+		max=35;
+	}
+}
+#else
 void BJ_Breathe()
 {
 	static int which = 0, max = 10;
@@ -341,6 +695,7 @@ void BJ_Breathe()
 		max = 35;
 	}
 }
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ==================
@@ -355,12 +710,447 @@ void BJ_Breathe()
 ==================
 */
 
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - Additional functions for LevelCompleted
+void ShowBonus (long bonus)
+{
+	char tempstr[10];
+	char	ch;
+	int	x,i;
+
+	ltoa(bonus,tempstr,10);
+	x=8*(36-strlen(tempstr)*2);
+
+	for (i=0;i<strlen(tempstr);i++)
+	{
+		ch = tempstr[i];
+		if ((ch >= '0') && (ch <= '9'))
+		{
+			VWB_DrawPic(x,72,ch+(Y_NUM0PIC-'0'));
+			x += 16;
+		}
+	}
+}
+
+void DrawEndLevelScreen (int secretlvl)
+{
+	char tempstr[10];
+
+	VW_Bar (0,0,320,160,VIEWCOLOR);
+	VWB_DrawPic (8,8,L_GUYPIC);
+	if (secretlvl)
+	{
+		VWB_DrawPic (104,8,W_SECRETPIC);
+		VWB_DrawPic (104,24,W_LEVELPIC);
+		VWB_DrawPic (104,40,W_FINISHPIC);
+		VWB_DrawPic (184,24,secretlvl+L_NUM0PIC);
+	}
+	else
+	{
+		VWB_DrawPic (104,8,W_LEVELPIC);
+		VWB_DrawPic (104,24,W_FLOORPIC);
+		VWB_DrawPic (104,40,W_FINISHPIC);
+		sprintf (tempstr,"%d",MapEpisode[gamestate.mapon]);
+		Write (23,1,tempstr);
+		sprintf (tempstr,"%d",MapLevel[gamestate.mapon]);
+		Write (23,3,tempstr);
+	}
+	VWB_DrawPic (104,72,W_BONUSPIC);
+}
+
+void RollDelay (void)
+{
+	unsigned long lasttime = get_TimeCount();
+	while (get_TimeCount() == lasttime)
+		;
+}
+#endif /* GAMEVER_NOAH3D */
+
+LRstruct LevelRatios[30];
+#elif !defined(SPEAR)
 LRstruct LevelRatios[8];
 #else
 LRstruct LevelRatios[20];
 #endif
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void LevelCompleted (void)
+{
+	#define VBLWAIT	30
+	#define PAR_AMOUNT	500
+	#define PERCENT100AMT	10000
+	typedef struct {
+	// *** SHAREWARE V1.0 APOGEE RESTORATION ***
+			float time;
+			char timestr[6];
+			} times;
+
+	// *** S3DNA  RESTORATION ***
+	int	x,i,min,sec,secret; // PSP_DEVIATION: removed unused 'ratio'
+	boolean perfect;
+	long bonus,timeleft;
+	int	kr,sr,tr;
+	char tempstr[10];
+	// *** S3DNA  RESTORATION ***
+	unsigned long	lasttime;
+	times parTimes[]=
+	{
+	 // *** SHAREWARE V1.0 APOGEE RESTORATION ***
+	 //
+	 // Episode One Par Times
+	 //
+	 {0.5,  "00:30"},
+	 {1,	"01:00"},
+	 {1,	"01:00"},
+
+	 //
+	 // Episode Two Par Times
+	 //
+	 {2,	"02:00"},
+	 {1.75,	"01:45"},
+	 {1.5,  "01:30"},
+	 {1.75,	"01:45"},
+
+	 //
+	 // Episode Three Par Times
+	 //
+	 {2.75,	"01:45"}, // S3DNA RESTORATION - Looks like a typo
+	 {2,	"02:00"},
+	 {2.25,	"02:15"},
+	 {1,	"01:00"},
+	 {2,	"02:00"},
+
+	 //
+	 // Episode Four Par Times
+	 //
+	 {3.5,	"03:30"},
+	 {2.5,	"02:30"},
+	 {4,	"04:00"},
+	 {2.25,	"02:15"},
+	 {3.5,	"03:30"},
+
+	 //
+	 // Episode Five Par Times
+	 //
+	 {2.5,	"02:30"},
+	 {2.75,	"02:45"},
+	 {3,	"03:00"},
+	 {3.5,	"03:30"},
+	 {3,	"03:00"},
+	 {3,	"03:00"},
+
+	 //
+	 // Episode Six Par Times
+	 //
+	 {1.75,	"01:45"},
+	 {3,	"03:00"},
+	 {3,	"03:00"},
+	 {1.5,  "01:30"},
+	 {2.5,	"02:30"},
+	 {3.1900001,	"03:11"},
+	 {2.5,	"02:00"} // S3DNA RESTORATION - Another typo
+	};
+
+
+
+	// *** S3DNA  RESTORATION ***
+	StartCPMusic(NOAH05_MUS);
+	CacheLump(LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+	ClearSplitVWB ();			// set up for double buffering in split screen
+	ClearMemory();
+	CA_LoadAllSounds();
+
+	switch (gamestate.mapon)
+	{
+		case 11: secret = 1;
+			break;
+		case 29: secret = 2;
+			break;
+		default: secret = 0;
+	}
+	DrawEndLevelScreen (secret);
+	bonus = 0;
+	ShowBonus (0);
+	IN_ClearKeysDown ();
+	IN_StartAck ();
+
+	kr = sr = tr
+		= 0;
+	if (gamestate.killtotal)
+		kr=(gamestate.killcount*100)/gamestate.killtotal;
+	if (gamestate.secrettotal)
+		sr=(gamestate.secretcount*100)/gamestate.secrettotal;
+	if (gamestate.treasuretotal)
+		tr=(gamestate.treasurecount*100)/gamestate.treasuretotal;
+
+	if (secret)
+	{
+		VW_UpdateScreen();
+		VW_FadeIn();
+		VL_WaitVBL(VBLWAIT);
+		SD_PlaySound(PERCENT100SND);
+		bonus = 15000;
+		ShowBonus(15000);
+		set_TimeCount(0);
+		IN_StartAck();
+		lasttime = get_TimeCount();
+		do
+		{
+			BJ_Breathe();
+			VW_UpdateScreen();
+			if (IN_CheckAck())
+				break;
+		} while (get_TimeCount() - lasttime < 2*TickBase);
+
+	
+		while (SD_SoundPlaying())
+			BJ_Breathe();
+	}
+	VWB_DrawPic(96,112,W_PARPIC);
+	Write(19,14,parTimes[gamestate.mapon].timestr);
+	VWB_DrawPic(88,128,W_TIMEPIC);
+
+	//
+	// PRINT TIME
+	//
+	sec=gamestate.TimeCount/70;
+
+	if (sec > 99*60)		// 99 minutes max
+		sec = 99*60;
+
+	if (gamestate.TimeCount<parTimes[gamestate.mapon].time*4200)
+		timeleft=parTimes[gamestate.mapon].time*4200/70-sec;
+	else
+		timeleft=0;
+
+	min=sec/60;
+	sec%=60;
+
+	i=19*8;
+	VWB_DrawPic(i,16*8,L_NUM0PIC+(min/10));
+	i+=2*8;
+	VWB_DrawPic(i,16*8,L_NUM0PIC+(min%10));
+	i+=2*8;
+	Write(i/8,16,":");
+	i+=1*8;
+	VWB_DrawPic(i,16*8,L_NUM0PIC+(sec/10));
+	i+=2*8;
+	VWB_DrawPic(i,16*8,L_NUM0PIC+(sec%10));
+
+	VW_UpdateScreen ();
+	VW_FadeIn ();
+
+	set_TimeCount(0);
+	//
+	// PRINT TIME BONUS
+	//
+	if (timeleft)
+	{
+		for (i=0;i<=timeleft;i++)
+		{
+			ShowBonus(bonus+(long)i*PAR_AMOUNT);
+			SD_PlaySound(D_INCSND);
+			VW_UpdateScreen();
+			BJ_Breathe();
+			if (IN_CheckAck())
+				break;
+			RollDelay();
+		}
+		VW_UpdateScreen();
+		SD_PlaySound(D_INCSND);
+		while (SD_SoundPlaying())
+			BJ_Breathe();
+	}
+	else
+		SD_PlaySound(NOBONUSSND);
+
+	bonus+=timeleft*PAR_AMOUNT;
+	IN_StartAck();
+	lasttime = get_TimeCount();
+	do
+	{
+		BJ_Breathe();
+		VW_UpdateScreen();
+		if (IN_CheckAck())
+			break;
+	} while (get_TimeCount() - lasttime < 2*TickBase);
+
+
+	DrawEndLevelScreen(secret);
+	ShowBonus(bonus);
+	VWB_DrawPic(80,104,W_KILLSPIC);
+	Write(27,13,"0%");
+	VWB_DrawPic(104,120,W_TREASURESPIC);
+	Write(27,15,"0%");
+	VWB_DrawPic(72,136,W_SECRETSPIC);
+	Write(27,17,"0%");
+
+	VW_UpdateScreen();
+	IN_StartAck();
+
+	#define RATIOXX		29
+	for (i=0;i<=kr;i++)
+	{
+		itoa(i,tempstr,10);
+		x=RATIOXX-strlen(tempstr)*2;
+		Write(x,13,tempstr);
+		SD_PlaySound(D_INCSND);
+		VW_UpdateScreen();
+		BJ_Breathe();
+		if (IN_CheckAck())
+			goto done;
+		RollDelay();
+	}
+
+	if (kr==100)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		bonus+=PERCENT100AMT;
+		ShowBonus(bonus);
+		SD_PlaySound(PERCENT100SND);
+	}
+	else if (kr==0)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		SD_PlaySound(NOBONUSSND);
+	}
+	else
+		SD_PlaySound(D_INCSND);
+
+	VW_UpdateScreen();
+	while (SD_SoundPlaying())
+		BJ_Breathe();
+
+	for (i=0;i<=tr;i++)
+	{
+		itoa(i,tempstr,10);
+		x=RATIOXX-strlen(tempstr)*2;
+		Write(x,15,tempstr);
+		SD_PlaySound(D_INCSND);
+		VW_UpdateScreen();
+		BJ_Breathe();
+		if (IN_CheckAck())
+			goto done;
+		RollDelay();
+	}
+
+	if (tr==100)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		bonus+=PERCENT100AMT;
+		ShowBonus(bonus);
+		SD_PlaySound(PERCENT100SND);
+	}
+	else if (tr==0)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		SD_PlaySound(NOBONUSSND);
+	}
+	else
+		SD_PlaySound(D_INCSND);
+
+	VW_UpdateScreen();
+	while (SD_SoundPlaying())
+		BJ_Breathe();
+
+	for (i=0;i<=sr;i++)
+	{
+		itoa(i,tempstr,10);
+		x=RATIOXX-strlen(tempstr)*2;
+		Write(x,17,tempstr);
+		SD_PlaySound(D_INCSND);
+		VW_UpdateScreen();
+		BJ_Breathe();
+		if (IN_CheckAck())
+			goto done;
+		RollDelay();
+	}
+
+	if (sr==100)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		bonus+=PERCENT100AMT;
+		ShowBonus(bonus);
+		SD_PlaySound(PERCENT100SND);
+	}
+	else if (sr==0)
+	{
+		VW_WaitVBL(VBLWAIT);
+		SD_StopSound();
+		SD_PlaySound(NOBONUSSND);
+	}
+	else
+		SD_PlaySound(D_INCSND);
+
+	VW_UpdateScreen();
+	while (SD_SoundPlaying())
+		BJ_Breathe();
+
+	//
+	// JUMP STRAIGHT HERE IF KEY PRESSED
+	//
+	done:
+
+	perfect = (kr==100)&&(tr==100)&&(sr==100);
+
+	itoa(kr,tempstr,10);
+	x=RATIOXX-strlen(tempstr)*2;
+	Write(x,13,tempstr);
+
+	itoa(tr,tempstr,10);
+	x=RATIOXX-strlen(tempstr)*2;
+	Write(x,15,tempstr);
+
+	itoa(sr,tempstr,10);
+	x=RATIOXX-strlen(tempstr)*2;
+	Write(x,17,tempstr);
+
+	//
+	// SAVE RATIO INFORMATION FOR ENDGAME
+	//
+	LevelRatios[gamestate.mapon].kill=kr;
+	LevelRatios[gamestate.mapon].secret=sr;
+	LevelRatios[gamestate.mapon].treasure=tr;
+	LevelRatios[gamestate.mapon].time=min*60+sec;
+	LevelRatios[gamestate.mapon].par=parTimes[gamestate.mapon].time*(4200/70);
+
+
+	GivePoints(bonus);
+	ShowBonus(bonus);
+	DrawScore();
+	VW_UpdateScreen();
+
+
+	if (perfect)
+	{
+		DrawEndLevelScreen(secret);
+		ShowBonus(bonus);
+		VWB_DrawPic(96,120,W_PERFECTPIC);
+		VW_UpdateScreen();
+		SD_StopSound();
+		SD_PlaySound(PERCENT100SND);
+	}
+	IN_StartAck();
+	set_TimeCount(0);
+	while (!IN_CheckAck())
+		BJ_Breathe();
+
+
+	VW_FadeOut();
+	DrawPlayBorder ();
+
+	UnCacheLump(LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+
+	// PSP_DEVIATION: the audio chunks are not freed here
+	SD_WaitSoundDone();
+
+}
+#else
 void LevelCompleted()
 {
 #define VBLWAIT 30
@@ -833,6 +1623,7 @@ void LevelCompleted()
 
 	UnCacheLump(LEVELEND_LUMP_START, LEVELEND_LUMP_END);
 }
+#endif /* GAMEVER_NOAH3D */
 
 //==========================================================================
 
@@ -844,6 +1635,185 @@ void LevelCompleted()
 =================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+int	FloorTile[] = {0,0,2,1,1,1,0,2,2,2,1,3,0,0,0,0,2,1,1,1,1,1,0,2,2,2,2,2,1,3,3};
+
+char	mission1text[] = {
+	"You'll be out of the ark in six\n"
+	"days, Noah. Unfortunately, the\n"
+	"animals are a tad bit restless and\n"
+	"want to get out now. Good thing\n"
+	"you brought all that food with\n"
+	"you. You'll need it to put the\n"
+	"busy ones to sleep.\n"
+	"\n"
+	"At the end of the first day, be\n"
+	"prepared to deal with Carl the\n"
+	"Camel. He's been real cranky lately\n"
+	"and is a bit out of control.\n"
+	"\n"
+	"Good luck and be careful...\n"
+},
+
+mission2text[] = {
+	"Wow, Noah! Carl sure was hard to\n"
+	"calm down. But remember, you\n"
+	"were chosen to guide this ark to\n"
+	"safety because you know how to\n"
+	"get the job done.\n"
+	"\n"
+	"The closing of day two ends with\n"
+	"irritable Ginny the Giraffe. She\n"
+	"may be tall and quick, but give\n"
+	"her enough food and it's off to\n"
+	"sleep.\n"
+	"\n"
+	"Oh, and Noah, remember to keep\n"
+	"an eye out for hidden rooms...\n"
+},
+
+mission3text[] = {
+	"ZZZZZ... Great job, Noah!. Ginny is\n"
+	"snoring away.\n"
+	"\n"
+	"Boy, it seems the animals never\n"
+	"seem to stay asleep very long.\n"
+	"\n"
+	"Keep your eye out for Melvin the\n"
+	"Monkey. He can be pretty tricky\n"
+	"and may try distracting you with\n"
+	"coconuts, but it's your job to get\n"
+	"him settled down for the rest of\n"
+	"your time aboard the ark."
+},
+
+mission4text[] = {
+	"You're doing a great job, Noah!\n"
+	"You took care of that Melvin like\n"
+	"a real pro.\n"
+	"\n"
+	"I hope you haven't worn yourself\n"
+	"out yet, because more challenges\n"
+	"are ahead.\n"
+	"\n"
+	"Kerry the Kangaroo awaits you,\n"
+	"and she doesn't look the least\n"
+	"bit tired. Are you ready for her?\n"
+	"She needs to rest like the other\n"
+	"animals."
+},
+
+mission5text[] = {
+	"Wow! Kerry was no challenge for\n"
+	"you! Can you keep up the pace\n"
+	"when faced with Ernie the\n"
+	"Elephant?\n"
+	"\n"
+	"Don't worry. Very soon you will\n"
+	"be on dry land, and you won't\n"
+	"have to chase the animals around\n"
+	"the ark anymore."
+},
+
+mission6text[] = {
+	"You are almost there! If you can\n"
+	"get through one more day, you\n"
+	"will be out of here for good!\n"
+	"\n"
+	"Rumor has it one of the bears\n"
+	"does not want to be found. In\n"
+	"fact he may try to hide from\n"
+	"you. Be on the alert for Burt\n"
+	"the Bear.\n"
+	"\n"
+	"Get him to sleep and your work\n"
+	"is done!"
+},
+
+creditstext[] = {
+	"\n"
+	"Super 3-D Noah's Ark\n"
+	"\n"
+	"\n"
+	"(C)1995 Wisdom Tree, Inc.\n"
+	"All rights reserved.\n"
+	"\n"
+	"\n"
+	"This game contains copyrighted\n"
+	"software code owned by\n"
+	"Id Software, Inc\n"
+	"(C)1992 Id Software, Inc.\n"
+	"All rights reserved.\n"
+};
+
+
+char *missiontext[] =
+	{mission1text,mission2text,mission3text,mission4text,mission5text,mission6text,creditstext};
+
+
+
+void Briefing (int mission, boolean credits)
+{
+	ClearMemory ();
+	if (mission >= 7)
+	{
+		sprintf (str,"Briefing(): Invalid briefing number %d!",mission);
+		Quit (str);
+	}
+	CacheLump (LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+	ClearSplitVWB ();
+	ClearMScreen ();
+	CA_CacheGrChunk (STARTFONT+1);
+	fontnumber = 1;
+	WindowX = PrintX = 8;
+	WindowY = PrintY = 8;
+	WindowW = 320-16;
+	WindowH = 200-16;
+	SETFONTCOLOR (READHCOLOR,BKGDCOLOR);
+
+	if (credits)
+		US_CPrint (missiontext[mission]);
+	else
+		US_Print (missiontext[mission]);
+
+	VW_UpdateScreen ();
+	VW_FadeIn ();
+
+	if (credits)
+		UnCacheLump (LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+	else
+	{
+		StartCPMusic (NOAH09_MUS);
+		IN_ClearKeysDown();
+		IN_Ack();
+		StopMusic();
+		UnCacheLump (LEVELEND_LUMP_START,LEVELEND_LUMP_END);
+		DrawPlayScreen();
+	}
+	CA_UnCacheGrChunk (STARTFONT+1);
+	ClearMemory ();
+}
+#endif /* GAMEVER_NOAH3D */
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+boolean PreloadUpdate(unsigned current, unsigned total)
+{
+	unsigned w = WindowW - 10;
+
+
+	// *** S3DNA RESTORATION ***
+	w = ((long)w * current) / total;
+	if (w)
+	{
+	 // *** S3DNA RESTORATION ***
+	 VW_Bar(WindowX + 5,WindowY + WindowH,w,2,0x55);
+	 VW_Bar(WindowX + 5,WindowY + WindowH,w-1,1,0x52);
+
+	}
+	VW_UpdateScreen();
+		return(false);
+}
+#else
 boolean PreloadUpdate(int current, int total)
 {
 	int w = WindowW - 10;
@@ -859,6 +1829,7 @@ boolean PreloadUpdate(int current, int total)
 
 	return false;
 }
+#endif /* GAMEVER_NOAH3D */
 
 void PreloadGraphics()
 {
@@ -867,7 +1838,11 @@ void PreloadGraphics()
 	DrawLevel();
 	ClearSplitVWB();
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	VW_Bar(0, 0, 320, 200 - STATUSLINES, VIEWCOLOR);
+#else
 	VW_Bar(0, 0, 320, 200 - STATUSLINES, 127);
+#endif
 
 	VWB_DrawPic(48, 56, GETPSYCHEDPIC);
 
@@ -882,6 +1857,9 @@ void PreloadGraphics()
 		PreloadUpdate(i, 50);
 	PreloadUpdate(50, 50);
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	LoadFloorTiles(FloorTile[gamestate.mapon]);
+#endif
 	IN_UserInput(70);
 	VW_FadeOut();
 
@@ -908,6 +1886,8 @@ void DrawHighScores()
 
 	buffer1[0] = 0;
 	str = 0;
+	(void)buffer1; // PSP_DEVIATION: silence set-but-unused
+	(void)str;
 
 #ifndef SPEAR
 	CA_CacheGrChunk(HIGHSCORESPIC);
@@ -923,8 +1903,13 @@ void DrawHighScores()
 	CA_UnCacheGrChunk(HIGHSCORESPIC);
 
 	VWB_DrawPic(4 * 8, 68, C_NAMEPIC);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	VWB_DrawPic(21 * 8, 68, C_LEVELPIC);
+	VWB_DrawPic(32 * 8, 68, C_SCOREPIC);
+#else
 	VWB_DrawPic(20 * 8, 68, C_LEVELPIC);
 	VWB_DrawPic(28 * 8, 68, C_SCOREPIC);
+#endif
 
 	fontnumber = 0;
 #else
@@ -963,8 +1948,17 @@ void DrawHighScores()
 		//
 		// level
 		//
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - show as episode-level
+		if (s->completed >= 30)
+			s->completed = 30;
+		sprintf(buffer, "%d-%d", MapEpisode[s->completed], MapLevel[s->completed]);
+		USL_MeasureString(buffer, &w, &h);
+		PrintX = (24 * 8) - w;
+#else
 		ultoa(s->completed, buffer, 10);
-#ifndef SPEAR
+#endif
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#elif !defined(SPEAR)
 		for (str = buffer; *str; str++)
 			*str = *str + (129 - '0'); // Used fixed-width numbers (129...)
 		USL_MeasureString(buffer, &w, &h);
@@ -974,7 +1968,7 @@ void DrawHighScores()
 		PrintX = 194 - w;
 #endif
 
-#if !defined(UPLOAD) || !defined(SPEAR)
+#if (!defined(UPLOAD) || !defined(SPEAR)) && !defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 		PrintX -= 6;
 		itoa(s->episode + 1, buffer1, 10);
 		US_Print("E");
@@ -993,7 +1987,10 @@ void DrawHighScores()
 		// score
 		//
 		ultoa(s->score, buffer, 10);
-#ifndef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		USL_MeasureString(buffer, &w, &h);
+		PrintX = 288 - w;
+#elif !defined(SPEAR)
 		for (str = buffer; *str; str++)
 			*str = *str + (129 - '0'); // Used fixed-width numbers (129...)
 		USL_MeasureString(buffer, &w, &h);
@@ -1029,7 +2026,11 @@ void CheckHighScore(long score, word other)
 
 	strcpy(myscore.name, "");
 	myscore.score = score;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	myscore.episode = gamestate.mapon;
+#else
 	myscore.episode = gamestate.episode;
+#endif
 	myscore.completed = other;
 
 	for (i = 0, n = -1; i < MaxScores; i++)
@@ -1046,7 +2047,9 @@ void CheckHighScore(long score, word other)
 		}
 	}
 
-#ifdef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	StartCPMusic(NOAH11_MUS);
+#elif defined(SPEAR)
 	StartCPMusic(XAWARD_MUS);
 #else
 	StartCPMusic(ROSTER_MUS);

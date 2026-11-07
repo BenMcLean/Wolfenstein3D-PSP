@@ -5,6 +5,9 @@ extern maptype *mapheaderseg[];
 
 automap_t Auto_Map;
 
+// PSP_DEVIATION: S3DNA RESTORATION - Super 3-D Noah's Ark has its own AutoMap in wl_map.c
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+
 static int scale = 12; // (4 to 16)
 
 static int clip_tile(int *rx, int *ry, int *rw, int *rh)
@@ -273,3 +276,5 @@ void AutoMap(void)
 	WindowW = 320;
 	WindowH = 200;
 }
+
+#endif /* GAMEVER_NOAH3D */

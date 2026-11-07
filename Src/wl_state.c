@@ -121,6 +121,15 @@ void NewState(objtype *ob, int state) /* stateenum */
 		}                                                     \
 	}
 
+// PSP_DEVIATION: S3DNA RESTORATION - no fake hitler, and only up to MAXDOORS = 32 doors
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define DOGLIKE(ob) ((ob)->obclass == dogobj)
+#define DOORMASK 31
+#else
+#define DOGLIKE(ob) ((ob)->obclass == dogobj || (ob)->obclass == fakeobj)
+#define DOORMASK 63
+#endif
+
 #define CHECKSIDE(x, y)                                            \
 	{                                                              \
 		temp = actorat[x][y];                                      \
@@ -129,7 +138,7 @@ void NewState(objtype *ob, int state) /* stateenum */
 			if (temp < 128)                                        \
 				return false;                                      \
 			if (temp < 256)                                        \
-				doornum = temp & 63;                               \
+				doornum = temp & DOORMASK;                         \
 			else if (objlist[temp & ~0x8000].flags & FL_SHOOTABLE) \
 				return false;                                      \
 		}                                                          \
@@ -190,7 +199,7 @@ boolean TryWalk(objtype *ob)
 		switch (ob->dir)
 		{
 		case north:
-			if (ob->obclass == dogobj || ob->obclass == fakeobj)
+			if (DOGLIKE(ob))
 			{
 				CHECKDIAG(ob->tilex, ob->tiley - 1);
 			}
@@ -210,7 +219,7 @@ boolean TryWalk(objtype *ob)
 			break;
 
 		case east:
-			if (ob->obclass == dogobj || ob->obclass == fakeobj)
+			if (DOGLIKE(ob))
 			{
 				CHECKDIAG(ob->tilex + 1, ob->tiley);
 			}
@@ -230,7 +239,7 @@ boolean TryWalk(objtype *ob)
 			break;
 
 		case south:
-			if (ob->obclass == dogobj || ob->obclass == fakeobj)
+			if (DOGLIKE(ob))
 			{
 				CHECKDIAG(ob->tilex, ob->tiley + 1);
 			}
@@ -250,7 +259,7 @@ boolean TryWalk(objtype *ob)
 			break;
 
 		case west:
-			if (ob->obclass == dogobj || ob->obclass == fakeobj)
+			if (DOGLIKE(ob))
 			{
 				CHECKDIAG(ob->tilex - 1, ob->tiley);
 			}
@@ -661,8 +670,10 @@ void MoveObj(objtype *ob, long move)
 		if (deltay < -MINACTORDIST || deltay > MINACTORDIST)
 			goto moveok;
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts
 		if (ob->obclass == ghostobj || ob->obclass == spectreobj)
 			TakeDamage(tics * 2, ob);
+#endif
 
 		//
 		// back up
@@ -723,6 +734,108 @@ moveok:
 ===============
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void KillActor(objtype *ob)
+{
+	int tilex, tiley;
+
+	tilex = ob->tilex = ob->x >> TILESHIFT; // drop item on center
+	tiley = ob->tiley = ob->y >> TILESHIFT;
+
+	switch (ob->obclass)
+	{
+	case guardobj:
+		GivePoints(100);
+		NewState(ob, s_grddie1);
+		PlaceItemType(bo_clip2, tilex, tiley);
+		break;
+
+	case officerobj:
+		GivePoints(400);
+		NewState(ob, s_ofcdie1);
+		PlaceItemType(bo_clip2, tilex, tiley);
+		break;
+
+	case mutantobj:
+		GivePoints(700);
+		NewState(ob, s_mutdie1);
+		PlaceItemType(bo_clip2, tilex, tiley);
+		break;
+
+	case ssobj:
+		GivePoints(500);
+		NewState(ob, s_ssdie1);
+		if (!gamestate.machinegun)
+			PlaceItemType(bo_machinegun, tilex, tiley);
+		else
+			PlaceItemType(bo_clip2, tilex, tiley);
+		break;
+
+	case dogobj:
+		GivePoints(200);
+		NewState(ob, s_dogdie1);
+		break;
+
+	case bossobj:
+		GivePoints(5000);
+		NewState(ob, s_bossdie1);
+		PlaceItemType(bo_key1, tilex, tiley);
+		break;
+
+	case gretelobj:
+		GivePoints(5000);
+		NewState(ob, s_greteldie1);
+		PlaceItemType(bo_key1, tilex, tiley);
+		break;
+
+	case giftobj:
+		GivePoints(5000);
+		gamestate.killx = player->x;
+		gamestate.killy = player->y;
+		NewState(ob, s_giftdie1);
+		PlaceItemType(bo_key1, tilex, tiley);
+		break;
+
+	case fatobj:
+		GivePoints(5000);
+		gamestate.killx = player->x;
+		gamestate.killy = player->y;
+		NewState(ob, s_fatdie1);
+		PlaceItemType(bo_key1, tilex, tiley);
+		break;
+
+	case schabbobj:
+		GivePoints(5000);
+		gamestate.killx = player->x;
+		gamestate.killy = player->y;
+		NewState(ob, s_schabbdie1);
+		PlaceItemType(bo_key1, tilex, tiley);
+		A_DeathScream(ob);
+		break;
+
+	case mechahitlerobj:
+		GivePoints(5000);
+		NewState(ob, s_mechadie1);
+		break;
+
+	case realhitlerobj:
+		GivePoints(5000);
+		gamestate.killx = player->x;
+		gamestate.killy = player->y;
+		NewState(ob, s_hitlerdie1);
+		A_DeathScream(ob);
+		break;
+
+	default:
+		break;
+	}
+
+	gamestate.killcount++;
+	ob->flags &= ~FL_SHOOTABLE;
+	actorat[ob->tilex][ob->tiley] = 0;
+	ob->flags |= FL_NONMARK;
+}
+#else
 void KillActor(objtype *ob)
 {
 	int tilex, tiley;
@@ -858,6 +971,7 @@ void KillActor(objtype *ob)
 	actorat[ob->tilex][ob->tiley] = 0;
 	ob->flags |= FL_NONMARK;
 }
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ===================
@@ -881,6 +995,23 @@ void DamageActor(objtype *ob, unsigned damage)
 	//
 	if (!(ob->flags & FL_ATTACKMODE))
 		damage <<= 1;
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - difficulty scales the damage dealt to actors
+	switch (gamestate.difficulty)
+	{
+	case gd_baby:
+		damage <<= 1;
+		break;
+	case gd_easy:
+		damage += (damage >> 1);
+		break;
+	case gd_medium:
+		damage += (damage >> 2);
+		break;
+	default:
+		break;
+	}
+#endif
 
 	ob->hitpoints -= damage;
 
@@ -999,6 +1130,9 @@ boolean CheckLine(objtype *ob)
 			yfrac += ystep;
 
 			value = (unsigned)tilemap[x][y];
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			value &= 0xFFDF;
+#endif
 			x += xstep;
 
 			if (!value)
@@ -1013,6 +1147,10 @@ boolean CheckLine(objtype *ob)
 			value &= ~0x80;
 			intercept = yfrac - ystep / 2;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			if (doorposition[value] < 16384)
+				return false;
+#endif
 			if (intercept > doorposition[value])
 				return false;
 
@@ -1053,6 +1191,9 @@ boolean CheckLine(objtype *ob)
 			xfrac += xstep;
 
 			value = (unsigned)tilemap[x][y];
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			value &= 0xFFDF;
+#endif
 			y += ystep;
 
 			if (!value)
@@ -1067,6 +1208,10 @@ boolean CheckLine(objtype *ob)
 			value &= ~0x80;
 			intercept = xfrac - xstep / 2;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			if (doorposition[value] < 16384)
+				return false;
+#endif
 			if (intercept > doorposition[value])
 				return false;
 		} while (y != yt2);
@@ -1110,6 +1255,7 @@ boolean CheckSight(objtype *ob)
 	if (deltax > -MINSIGHT && deltax < MINSIGHT && deltay > -MINSIGHT && deltay < MINSIGHT)
 		return true;
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no facing check
 	//
 	// see if they are looking in the right direction
 	//
@@ -1137,6 +1283,7 @@ boolean CheckSight(objtype *ob)
 	default:
 		break;
 	}
+#endif
 
 	//
 	// trace a line to check for blocking tiles (corners)
@@ -1175,6 +1322,9 @@ void FirstSighting(objtype *ob)
 		break;
 
 	case mutantobj:
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		PlaySoundLocActor(D_OXSND, ob);
+#endif
 		NewState(ob, s_mutchase1);
 		ob->speed *= 3; // go faster when chasing player
 		break;
@@ -1222,11 +1372,13 @@ void FirstSighting(objtype *ob)
 		ob->speed *= 3; // go faster when chasing player
 		break;
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no fake hitler
 	case fakeobj:
 		SD_PlaySound(TOT_HUNDSND);
 		NewState(ob, s_fakechase1);
 		ob->speed *= 3; // go faster when chasing player
 		break;
+#endif
 
 	case mechahitlerobj:
 		SD_PlaySound(DIESND);
@@ -1240,10 +1392,12 @@ void FirstSighting(objtype *ob)
 		ob->speed *= 5; // go faster when chasing player
 		break;
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no ghosts
 	case ghostobj:
 		NewState(ob, s_blinkychase1);
 		ob->speed *= 2; // go faster when chasing player
 		break;
+#endif
 #else
 
 	case spectreobj:
@@ -1358,23 +1512,47 @@ boolean SightPlayer(objtype *ob)
 
 		case bossobj:
 		case schabbobj:
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no fake hitler
 		case fakeobj:
+#endif
 		case mechahitlerobj:
 		case realhitlerobj:
 		case gretelobj:
 		case giftobj:
 		case fatobj:
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no Spear of Destiny actors
 		case spectreobj:
 		case angelobj:
 		case transobj:
 		case uberobj:
 		case willobj:
 		case deathobj:
+#endif
 			ob->temp2 = 1;
+			break;
+		default:
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			sprintf(str, "SightPlayer: Invalid object class %u!\n", ob->obclass);
+			Quit(str);
+#endif
+			break;
+		}
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - difficulty scales the reaction time
+		switch (gamestate.difficulty)
+		{
+		case gd_baby:
+			ob->temp2 += (ob->temp2 + 3) >> 1;
+			break;
+		case gd_easy:
+			ob->temp2 += (ob->temp2 + 6) >> 2;
+			break;
+		case gd_medium:
+			ob->temp2 += (ob->temp2 + 9) >> 3;
 			break;
 		default:
 			break;
 		}
+#endif
 		return false;
 	}
 

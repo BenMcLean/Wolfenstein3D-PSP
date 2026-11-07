@@ -32,6 +32,9 @@ typedef int8_t ScanCode;
 #define sc_Space 0x39
 #define sc_BackSpace 0x0e
 #define sc_Tab 0x0f
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+#define sc_Tilde 0x29
+#endif
 #define sc_Alt 0x38
 #define sc_Control 0x1d
 #define sc_CapsLock 0x3a

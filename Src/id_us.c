@@ -10,6 +10,16 @@ word WindowX, WindowY, WindowW, WindowH;
 static boolean US_Started;
 
 HighScore Scores[MaxScores] = {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	{"Noah", 10000, 1},
+	{"Eve", 10000, 1},
+	{"Moses", 10000, 1},
+	{"Ruth", 10000, 1},
+	{"Adam", 10000, 1},
+	{"Deborah", 10000, 1},
+	{"Abraham", 10000, 1},
+};
+#else
 	{"id software-'92", 10000, 1},
 	{"Adrian Carmack", 10000, 1},
 	{"John Carmack", 10000, 1},
@@ -18,6 +28,7 @@ HighScore Scores[MaxScores] = {
 	{"John Romero", 10000, 1},
 	{"Jay Wilbur", 10000, 1},
 };
+#endif
 
 //	Public routines
 

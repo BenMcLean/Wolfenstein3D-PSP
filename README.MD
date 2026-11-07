@@ -21,6 +21,9 @@ WOLF3D Shareware = 0
 WOLF3D Full retail = 1
 WOLF3D Spear of Destiny Shareware = 2
 WOLF3D Spear of Destiny Full = 3
+WOLF3D Spear of Destiny: Return to Danger = 4
+WOLF3D Spear of Destiny: Ultimate Challenge = 5
+Super 3-D Noah's Ark (DOS data files, *.N3D) = 6
 ```
 
 For instance to build the shareware version of Spear of Destiny run:

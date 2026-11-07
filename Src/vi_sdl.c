@@ -350,6 +350,14 @@ void INL_Update()
 	// them stuck off. Outside a level the shoulders keep their old menu behaviour (Alt + arrow).
 	Keyboard[sc_StrafeLeft] = InternalKeyboard[sc_StrafeLeft] = (pad.Buttons & PSP_CTRL_LTRIGGER) != 0;
 	Keyboard[sc_StrafeRight] = InternalKeyboard[sc_StrafeRight] = (pad.Buttons & PSP_CTRL_RTRIGGER) != 0;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	// BEGIN PSP_DEVIATION: S3DNA RESTORATION - weapons 5 (O + L) and 6 (O + R), the D-pad only has room for 1-4
+	if (new_buttons & PSP_CTRL_LTRIGGER)
+		keyboard_handler(sc_5, (buttons & PSP_CTRL_LTRIGGER) && (buttons & PSP_CTRL_CIRCLE) && ingame);
+	if (new_buttons & PSP_CTRL_RTRIGGER)
+		keyboard_handler(sc_6, (buttons & PSP_CTRL_RTRIGGER) && (buttons & PSP_CTRL_CIRCLE) && ingame);
+	// END PSP_DEVIATION
+#endif
 	if (new_buttons & PSP_CTRL_RTRIGGER)
 	{
 		if (!(buttons & PSP_CTRL_RTRIGGER))

@@ -45,6 +45,11 @@ fixed sintable[ANGLES + ANGLES / 4 + 1], *costable = sintable + (ANGLES / 4);
 int _argc;
 char **_argv;
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+boolean noquestions, nofloors;
+int questionnum = 0;
+#endif
+
 /*
 ========================
 =
@@ -165,7 +170,11 @@ int WriteConfig()
 		WriteInt32(fd, MusicMode);		/* padding */
 		WriteInt32(fd, DigiMode);		/* padding */
 		WriteInt32(fd, SD_GetVolume()); /* padding */
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		WriteInt32(fd, questionnum);	/* next quiz question */
+#else
 		WriteInt32(fd, 0);				/* padding */
+#endif
 		WriteInt32(fd, 0);				/* padding */
 		WriteInt32(fd, 0);				/* padding */
 		WriteInt32(fd, 0);				/* padding */
@@ -243,6 +252,17 @@ int ReadConfig()
 		}
 
 		viewsize = ReadInt32(fd);
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - skip the second viewsize and the four sound values to get at the quiz question
+		if (version == 0xFFFFFFFF)
+		{
+			for (i = 0; i < 5; i++)
+				ReadInt32(fd);
+			questionnum = ReadInt32(fd);
+			if (questionnum < 0 || questionnum >= 99)
+				questionnum = 0;
+		}
+#endif
 
 		/* load the new data */
 		if (version == 0x00000000)
@@ -372,7 +392,9 @@ int SaveTheGame(char *fn, char *tag, int x, int y)
 
 	DiskFlopAnim(x, y);
 
-#ifdef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - 30 levels
+	for (i = 0; i < 30; i++)
+#elif defined(SPEAR)
 	for (i = 0; i < 20; i++)
 #else
 	for (i = 0; i < 8; i++)
@@ -450,6 +472,10 @@ int SaveTheGame(char *fn, char *tag, int x, int y)
 	WriteBytes(fd, (byte *)&Auto_Map, sizeof(automap_t));
 	checksum = DoChecksum((byte *)&Auto_Map, sizeof(automap_t), checksum);
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the next quiz question belongs to the saved game
+	WriteBytes(fd, (byte *)&questionnum, sizeof(questionnum));
+	checksum = DoChecksum((byte *)&questionnum, sizeof(questionnum), checksum);
+#endif
 	// WRITE OUT CHECKSUM
 
 	WriteBytes(fd, (byte *)&checksum, sizeof(checksum));
@@ -525,7 +551,9 @@ int LoadTheGame(char *fn, int x, int y)
 
 	DiskFlopAnim(x, y);
 
-#ifdef SPEAR
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - 30 levels
+	for (i = 0; i < 30; i++)
+#elif defined(SPEAR)
 	for (i = 0; i < 20; i++)
 #else
 	for (i = 0; i < 8; i++)
@@ -613,6 +641,12 @@ int LoadTheGame(char *fn, int x, int y)
 	ReadBytes(fd, (byte *)&Auto_Map, sizeof(automap_t));
 	checksum = DoChecksum((byte *)&Auto_Map, sizeof(automap_t), checksum);
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	ReadBytes(fd, (byte *)&questionnum, sizeof(questionnum));
+	checksum = DoChecksum((byte *)&questionnum, sizeof(questionnum), checksum);
+	if (questionnum < 0 || questionnum >= 99)
+		questionnum = 0;
+#endif
 	ReadBytes(fd, (byte *)&oldchecksum, sizeof(oldchecksum));
 	if (oldchecksum != checksum)
 	{
@@ -665,7 +699,8 @@ int MS_CheckParm(char *check)
 	{
 		parm = _argv[i];
 
-		while (!isalpha(*parm)) // skip - / \ etc.. in front of parm
+		while (!isalpha((unsigned char)*parm)) // PSP_DEVIATION: cast avoids negative char index
+			 // skip - / \ etc.. in front of parm
 			if (!*parm++)
 				break; // hit end of string without an alphanum
 
@@ -802,6 +837,91 @@ void NewViewSize(int width)
 
 #ifndef SPEARDEMO
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - Noah's tunes
+CP_iteminfo MusicItems = {CTL_X, 40, 11, 0, 32};
+CP_itemtype MusicMenu[] =
+	{
+		{1, "Song 1", 0},
+		{1, "It's All Good!", 0},
+		{1, "Song 3", 0},
+		{1, "Song 4", 0},
+		{1, "Feed-time Shuffle", 0},
+		{1, "Song 6", 0},
+		{1, "Song 7", 0},
+		{1, "Song 8", 0},
+		{1, "Song 9", 0},
+		{1, "The Happy Song", 0},
+		{1, "Song 11", 0}};
+
+static const int songs[] =
+	{
+		NOAH01_MUS,
+		NOAH02_MUS,
+		NOAH03_MUS,
+		NOAH04_MUS,
+		NOAH05_MUS,
+		NOAH06_MUS,
+		NOAH07_MUS,
+		NOAH08_MUS,
+		NOAH09_MUS,
+		NOAH10_MUS,
+		NOAH11_MUS};
+
+void DoJukebox()
+{
+	int which, lastsong = -1;
+	unsigned start;
+
+	IN_ClearKeysDown();
+
+	MenuFadeOut();
+
+	start = 0;
+
+	CA_CacheGrChunk(STARTFONT + 1);
+	CacheLump(CONTROLS_LUMP_START, CONTROLS_LUMP_END);
+	CA_LoadAllSounds();
+
+	fontnumber = 1;
+	ClearMScreen();
+	VWB_DrawPic(112, 192, C_MOUSELBACKPIC);
+	SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+
+	DrawWindow(CTL_X - 2, CTL_Y - 36, 280, 13 * 12, BKGDCOLOR);
+
+	DrawMenu(&MusicItems, &MusicMenu[start]);
+
+	SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
+	PrintY = 15;
+	WindowX = 0;
+	WindowY = 320;
+	US_CPrint("Noah Tunes");
+
+	SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
+	VW_UpdateScreen();
+	MenuFadeIn();
+
+	do
+	{
+		which = HandleMenu(&MusicItems, &MusicMenu[start], NULL);
+		if (which >= 0)
+		{
+			if (lastsong >= 0)
+				MusicMenu[start + lastsong].active = 1;
+
+			StartCPMusic(songs[start + which]);
+			MusicMenu[start + which].active = 2;
+			DrawMenu(&MusicItems, &MusicMenu[start]);
+			VW_UpdateScreen();
+			lastsong = which;
+		}
+	} while (which >= 0);
+
+	MenuFadeOut();
+	IN_ClearKeysDown();
+	UnCacheLump(CONTROLS_LUMP_START, CONTROLS_LUMP_END);
+}
+#else
 #ifndef SPEAR
 CP_iteminfo MusicItems = {8, CTL_Y, 6, 0, 32};
 CP_itemtype MusicMenu[] =
@@ -950,7 +1070,9 @@ void DoJukebox()
 	UnCacheLump(CONTROLS_LUMP_START, CONTROLS_LUMP_END);
 #endif
 }
-#endif
+#endif /* GAMEVER_NOAH3D */
+
+#endif /* SPEARDEMO */
 
 /* ======================================================================== */
 
@@ -985,6 +1107,32 @@ void ShutdownId()
 =====================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+void NewGame (int difficulty,int episode)
+{
+	// *** S3DNA RESTORATION ***
+	memset (&LevelRatios,0,sizeof(LRstruct)*30);
+	memset (&gamestate,0,sizeof(gamestate));
+	gamestate.difficulty = difficulty;
+	gamestate.weapon = gamestate.bestweapon
+		= gamestate.chosenweapon = wp_pistol;
+	gamestate.health = 100;
+	gamestate.ammo = STARTAMMO;
+	gamestate.lives = 3;
+	gamestate.nextextra = EXTRAPOINTS;
+	// *** S3DNA + ALPHA RESTORATION ***
+	gamestate.mapon=episode;
+	gamestate.maxammo=99;
+	gamestate.gas = gamestate.missiles = 0;
+	gamestate.machinegun = 0;
+	gamestate.chaingun = 0;
+	gamestate.flamethrower = 0;
+	gamestate.missile = 0;
+	gamestate.automap = false;
+
+	startgame = true;
+}
+#else
 void NewGame(int difficulty, int episode)
 {
 	memset(&gamestate, 0, sizeof(gamestate));
@@ -999,6 +1147,7 @@ void NewGame(int difficulty, int episode)
 
 	startgame = true;
 }
+#endif /* GAMEVER_NOAH3D */
 
 /*
 ==========================
@@ -1013,6 +1162,15 @@ void NewGame(int difficulty, int episode)
 void InitGame()
 {
 	int i;
+
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	noquestions = false;
+	if (MS_CheckParm("noquestions"))
+		noquestions = true;
+	nofloors = false;
+	if (MS_CheckParm("nofloors"))
+		nofloors = true;
+#endif
 
 	MM_Startup();
 	PM_Startup();
@@ -1068,6 +1226,116 @@ void InitGame()
 =====================
 */
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - Noah's attract mode
+void DemoLoop()
+{
+	static int LastDemo;
+
+	int i;
+
+	//
+	// main game cycle
+	//
+	LastDemo = 0;
+	StartCPMusic(INTROSONG);
+
+	i = MS_CheckParm("playdemo");
+	if (i && ((i + 1) < _argc))
+	{
+		i++;
+		for (; i < _argc; i++)
+		{
+			if (_argv[i][0] == '-')
+				break;
+
+			IN_ClearKeysDown();
+			if (PlayDemoFromFile(_argv[i]))
+				IN_UserInput(3 * 70);
+		}
+		VW_FadeOut();
+	}
+
+	if (MS_CheckParm("demotest"))
+	{
+		for (i = 0; i < 3; i++)
+			PlayDemo(i);
+	}
+
+	while (1)
+	{
+		while (!NoWait)
+		{
+			//
+			// title page
+			//
+			MM_SortMem();
+			CA_CacheGrChunk(TITLEPALETTE);
+			VL_CacheScreen(TITLEPIC);
+			VW_UpdateScreen();
+			VL_FadeIn(0, 255, grsegs[TITLEPALETTE], 30);
+			CA_UnCacheGrChunk(TITLEPALETTE);
+			if (IN_UserInput(TickBase))
+				break;
+
+			CA_CacheGrChunk(COPYRIGHTPIC);
+			VWB_DrawPic(0, 184, COPYRIGHTPIC);
+			VW_UpdateScreen();
+			CA_LoadAllSounds();
+			CA_UnCacheGrChunk(COPYRIGHTPIC);
+			if (IN_UserInput(TickBase))
+				break;
+
+			CA_CacheGrChunk(FAMILYAPIC);
+			VWB_DrawPic(224, 112, FAMILYAPIC);
+			VW_UpdateScreen();
+			CA_UnCacheGrChunk(FAMILYAPIC);
+			if (IN_UserInput(TickBase * 13))
+				break;
+			VW_FadeOut();
+
+			//
+			// credits page
+			//
+			Briefing(6, true);
+			if (IN_UserInput(TickBase * 10))
+				break;
+			VW_FadeOut();
+
+			//
+			// high scores
+			//
+			DrawHighScores();
+			VW_UpdateScreen();
+			VW_FadeIn();
+
+			if (IN_UserInput(TickBase * 10))
+				break;
+			//
+			// demo
+			//
+			PlayDemo(LastDemo++ % 3);
+
+			if (playstate == ex_abort)
+				break;
+			StartCPMusic(INTROSONG);
+		}
+
+		VW_FadeOut();
+
+		if (IN_KeyDown(sc_Tab) && MS_CheckParm("debugmode"))
+			RecordDemo();
+		else
+			US_ControlPanel(0);
+
+		if (startgame || loadedgame)
+		{
+			GameLoop();
+			VW_FadeOut();
+			StartCPMusic(INTROSONG);
+		}
+	}
+}
+#else
 void DemoLoop()
 {
 	static int LastDemo;
@@ -1078,6 +1346,7 @@ void DemoLoop()
 	//
 
 	LastDemo = 0;
+	(void)LastDemo; // PSP_DEVIATION: silence set-but-unused in SPEARDEMO builds
 
 	StartCPMusic(INTROSONG);
 
@@ -1186,6 +1455,7 @@ void DemoLoop()
 		}
 	}
 }
+#endif /* GAMEVER_NOAH3D */
 
 /* ======================================================================== */
 

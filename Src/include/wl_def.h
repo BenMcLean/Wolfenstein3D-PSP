@@ -35,10 +35,18 @@ extern int vwidth, vheight, vstride; /* size of screen */
 =============================================================================
 */
 
+// *** S3DNA RESTORATION ***
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define MAXACTORS 127	// max number of nazis, etc / map
+#define MAXSTATS 200	// max number of lamps, bonus, etc
+#define MAXDOORS 32		// max number of sliding doors
+#define MAXWALLTILES 32 // max number of wall tiles
+#else
 #define MAXACTORS 150   // max number of nazis, etc / map
 #define MAXSTATS 400	// max number of lamps, bonus, etc
 #define MAXDOORS 64		// max number of sliding doors
 #define MAXWALLTILES 64 // max number of wall tiles
+#endif
 
 //
 // tile constants
@@ -78,7 +86,10 @@ extern int vwidth, vheight, vstride; /* size of screen */
 
 #define MAXVIEWWIDTH 1280
 
-#define MAPSIZE 64 /* maps are 64*64 */
+#define MAPSIZE 64
+#ifndef NORTH
+#define NORTH 0 /* PSP_DEVIATION: S3DNA RESTORATION - used by the recreated ScanInfoPlane */
+#endif /* maps are 64*64 */
 
 #define STATUSLINES 40
 
@@ -102,7 +113,9 @@ extern int vwidth, vheight, vstride; /* size of screen */
 enum
 {
 	SPR_DEMO,
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
 	SPR_DEATHCAM,
+#endif
 	//
 	// static sprites
 	//
@@ -142,6 +155,194 @@ enum
 	SPR_STAT_30,
 	SPR_STAT_31,
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION sprite layout (verbatim from wolf3d recreation) */
+		// *** S3DNA RESTORATION ***
+		SPR_STAT_32,SPR_STAT_33,SPR_STAT_34,SPR_STAT_35,
+		SPR_STAT_36,
+
+		SPR_SNOOZE_1,SPR_SNOOZE_2,SPR_SNOOZE_3,
+
+		SPR_QUIZ,
+
+		SPR_WATERMELON,SPR_WATERMELONEXP,
+
+		SPR_GAMEOVER,
+
+		SPR_ANIMALPROJ,SPR_CANTALOUPE,
+		SPR_CANTALOUPEEXP,SPR_ANIMALPROJEXP,
+
+		SPR_YOUWIN,
+
+
+//
+// guard
+//
+		// *** S3DNA RESTORATION ***
+
+		SPR_GRD_W1_1,SPR_GRD_W1_2,SPR_GRD_W1_3,SPR_GRD_W1_4,
+		SPR_GRD_W1_5,SPR_GRD_W1_6,SPR_GRD_W1_7,SPR_GRD_W1_8,
+
+		SPR_GRD_W2_1,SPR_GRD_W2_2,SPR_GRD_W2_3,SPR_GRD_W2_4,
+		SPR_GRD_W2_5,SPR_GRD_W2_6,SPR_GRD_W2_7,SPR_GRD_W2_8,
+
+		SPR_GRD_W3_1,SPR_GRD_W3_2,SPR_GRD_W3_3,SPR_GRD_W3_4,
+		SPR_GRD_W3_5,SPR_GRD_W3_6,SPR_GRD_W3_7,SPR_GRD_W3_8,
+
+		SPR_GRD_W4_1,SPR_GRD_W4_2,SPR_GRD_W4_3,SPR_GRD_W4_4,
+		SPR_GRD_W4_5,SPR_GRD_W4_6,SPR_GRD_W4_7,SPR_GRD_W4_8,
+
+		// *** S3DNA RESTORATION ***
+
+		SPR_GRD_SHOOT1,SPR_GRD_SHOOT2,SPR_GRD_SHOOT3,
+		// *** S3DNA RESTORATION ***
+		SPR_GRD_DEAD,SPR_GRD_PAIN,SPR_GRD_DIE_1,SPR_GRD_DIE_2,
+		SPR_GRD_DEAD2,
+
+//
+// dogs
+//
+		SPR_DOG_W1_1,SPR_DOG_W1_2,SPR_DOG_W1_3,SPR_DOG_W1_4,
+		SPR_DOG_W1_5,SPR_DOG_W1_6,SPR_DOG_W1_7,SPR_DOG_W1_8,
+
+		SPR_DOG_W2_1,SPR_DOG_W2_2,SPR_DOG_W2_3,SPR_DOG_W2_4,
+		SPR_DOG_W2_5,SPR_DOG_W2_6,SPR_DOG_W2_7,SPR_DOG_W2_8,
+
+		SPR_DOG_W3_1,SPR_DOG_W3_2,SPR_DOG_W3_3,SPR_DOG_W3_4,
+		SPR_DOG_W3_5,SPR_DOG_W3_6,SPR_DOG_W3_7,SPR_DOG_W3_8,
+
+		SPR_DOG_W4_1,SPR_DOG_W4_2,SPR_DOG_W4_3,SPR_DOG_W4_4,
+		SPR_DOG_W4_5,SPR_DOG_W4_6,SPR_DOG_W4_7,SPR_DOG_W4_8,
+
+		// *** S3DNA RESTORATION ***
+		SPR_DOG_JUMP1,SPR_DOG_JUMP2,SPR_DOG_JUMP3,SPR_DOG_JUMP4,
+		SPR_DOG_DIE_1,SPR_DOG_DIE_2,SPR_DOG_DEAD,SPR_DOG_DEAD2,
+
+
+
+		// *** S3DNA RESTORATION ***
+		// Relocated and modified Officer sprite definitions
+//
+// officer
+//
+		SPR_OFC_W1_1,SPR_OFC_W1_2,SPR_OFC_W1_3,SPR_OFC_W1_4,
+		SPR_OFC_W1_5,SPR_OFC_W1_6,SPR_OFC_W1_7,SPR_OFC_W1_8,
+
+		SPR_OFC_W2_1,SPR_OFC_W2_2,SPR_OFC_W2_3,SPR_OFC_W2_4,
+		SPR_OFC_W2_5,SPR_OFC_W2_6,SPR_OFC_W2_7,SPR_OFC_W2_8,
+
+		SPR_OFC_W3_1,SPR_OFC_W3_2,SPR_OFC_W3_3,SPR_OFC_W3_4,
+		SPR_OFC_W3_5,SPR_OFC_W3_6,SPR_OFC_W3_7,SPR_OFC_W3_8,
+
+		SPR_OFC_W4_1,SPR_OFC_W4_2,SPR_OFC_W4_3,SPR_OFC_W4_4,
+		SPR_OFC_W4_5,SPR_OFC_W4_6,SPR_OFC_W4_7,SPR_OFC_W4_8,
+
+		SPR_OFC_SHOOT1,SPR_OFC_SHOOT2,SPR_OFC_SHOOT3,
+
+		SPR_OFC_DEAD,SPR_OFC_PAIN,SPR_OFC_DIE_1,SPR_OFC_DIE_2,
+		SPR_OFC_DEAD2,
+
+
+
+//
+// ss
+//
+		// *** S3DNA RESTORATION ***
+
+		SPR_SS_W1_1,SPR_SS_W1_2,SPR_SS_W1_3,SPR_SS_W1_4,
+		SPR_SS_W1_5,SPR_SS_W1_6,SPR_SS_W1_7,SPR_SS_W1_8,
+
+		SPR_SS_W2_1,SPR_SS_W2_2,SPR_SS_W2_3,SPR_SS_W2_4,
+		SPR_SS_W2_5,SPR_SS_W2_6,SPR_SS_W2_7,SPR_SS_W2_8,
+
+		SPR_SS_W3_1,SPR_SS_W3_2,SPR_SS_W3_3,SPR_SS_W3_4,
+		SPR_SS_W3_5,SPR_SS_W3_6,SPR_SS_W3_7,SPR_SS_W3_8,
+
+		SPR_SS_W4_1,SPR_SS_W4_2,SPR_SS_W4_3,SPR_SS_W4_4,
+		SPR_SS_W4_5,SPR_SS_W4_6,SPR_SS_W4_7,SPR_SS_W4_8,
+
+		// *** S3DNA RESTORATION ***
+
+		SPR_SS_SHOOT1,SPR_SS_SHOOT2,SPR_SS_SHOOT3,
+		// *** S3DNA RESTORATION ***
+		SPR_SS_DEAD,SPR_SS_PAIN,SPR_SS_DIE_1,SPR_SS_DIE_2,
+		SPR_SS_DEAD2,
+
+		// *** ALPHA RESTORATION ***
+//
+// mutant
+//
+		// *** S3DNA RESTORATION ***
+
+		SPR_MUT_W1_1,SPR_MUT_W1_2,SPR_MUT_W1_3,SPR_MUT_W1_4,
+		SPR_MUT_W1_5,SPR_MUT_W1_6,SPR_MUT_W1_7,SPR_MUT_W1_8,
+
+		SPR_MUT_W2_1,SPR_MUT_W2_2,SPR_MUT_W2_3,SPR_MUT_W2_4,
+		SPR_MUT_W2_5,SPR_MUT_W2_6,SPR_MUT_W2_7,SPR_MUT_W2_8,
+
+		SPR_MUT_W3_1,SPR_MUT_W3_2,SPR_MUT_W3_3,SPR_MUT_W3_4,
+		SPR_MUT_W3_5,SPR_MUT_W3_6,SPR_MUT_W3_7,SPR_MUT_W3_8,
+
+		SPR_MUT_W4_1,SPR_MUT_W4_2,SPR_MUT_W4_3,SPR_MUT_W4_4,
+		SPR_MUT_W4_5,SPR_MUT_W4_6,SPR_MUT_W4_7,SPR_MUT_W4_8,
+
+		// *** S3DNA RESTORATION ***
+		SPR_MUT_SHOOT1,SPR_MUT_SHOOT2,SPR_MUT_SHOOT3,
+
+		SPR_MUT_DEAD,SPR_MUT_PAIN,SPR_MUT_DIE_1,SPR_MUT_DIE_2,
+		SPR_MUT_DEAD2,
+
+		// *** S3DNA RESTORATION ***
+		// Relocated and modified Officer sprite definitions found above
+
+		// *** S3DNA RESTORATION ***
+		// Some sprite definitions shufflings and edits
+//
+// hans
+//
+		SPR_BOSS_W1,SPR_BOSS_W2,SPR_BOSS_W3,SPR_BOSS_W4,
+		SPR_BOSS_DIE1,SPR_BOSS_DIE2,SPR_BOSS_DEAD,SPR_BOSS_DEAD2,
+		SPR_BOSS_SHOOT1,SPR_BOSS_SHOOT2,SPR_BOSS_SHOOT3,
+
+//
+// gretel
+//
+		SPR_GRETEL_W1,SPR_GRETEL_W2,SPR_GRETEL_W3,SPR_GRETEL_W4,
+		SPR_GRETEL_DIE1,SPR_GRETEL_DIE2,SPR_GRETEL_DEAD,SPR_GRETEL_DEAD2,
+		SPR_GRETEL_SHOOT1,SPR_GRETEL_SHOOT2,SPR_GRETEL_SHOOT3,
+
+//
+// giftmacher
+//
+		SPR_GIFT_W1,SPR_GIFT_W2,SPR_GIFT_W3,SPR_GIFT_W4,
+		SPR_GIFT_DIE1,SPR_GIFT_DIE2,SPR_GIFT_DEAD,SPR_GIFT_DEAD2,
+		SPR_GIFT_SHOOT1,SPR_GIFT_SHOOT2,SPR_GIFT_SHOOT3,SPR_GIFT_SHOOT4,
+
+//
+// schabbs
+//
+		SPR_SCHABB_W1,SPR_SCHABB_W2,SPR_SCHABB_W3,SPR_SCHABB_W4,
+		SPR_SCHABB_DIE1,SPR_SCHABB_DIE2,SPR_SCHABB_DEAD,SPR_SCHABB_DEAD2,
+		SPR_SCHABB_SHOOT1,SPR_SCHABB_SHOOT2,
+
+//
+// fat face
+//
+		SPR_FAT_W1,SPR_FAT_W2,SPR_FAT_W3,SPR_FAT_W4,
+		SPR_FAT_DIE1,SPR_FAT_DIE2,SPR_FAT_DEAD,SPR_FAT_DEAD2,
+		SPR_FAT_SHOOT1,SPR_FAT_SHOOT2,SPR_FAT_SHOOT3,SPR_FAT_SHOOT4,
+
+//
+// hitler
+//
+		SPR_MECHA_W1,SPR_MECHA_W2,SPR_MECHA_W3,SPR_MECHA_W4,
+		SPR_MECHA_DIE1,SPR_MECHA_DIE2,SPR_MECHA_DIE3,SPR_MECHA_DEAD,
+		SPR_MECHA_SHOOT1,SPR_MECHA_SHOOT2,SPR_MECHA_SHOOT3,
+
+		SPR_HITLER_W1,SPR_HITLER_W2,SPR_HITLER_W3,SPR_HITLER_W4,
+		SPR_HITLER_DIE1,SPR_HITLER_DIE2,SPR_HITLER_DEAD,SPR_HITLER_DEAD2,
+		SPR_HITLER_SHOOT1,SPR_HITLER_SHOOT2,SPR_HITLER_SHOOT3,
+		// *** ALPHA RESTORATION ***
+#else
 	SPR_STAT_32,
 	SPR_STAT_33,
 	SPR_STAT_34,
@@ -769,6 +970,7 @@ enum
 	SPR_ANGEL_DEAD,
 
 #endif
+#endif /* GAMEVER_NOAH3D */
 
 	//
 	// player attack frames
@@ -796,6 +998,13 @@ enum
 	SPR_CHAINATK2,
 	SPR_CHAINATK3,
 	SPR_CHAINATK4,
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	SPR_CANTAREADY,SPR_CANTAATK1,SPR_CANTAATK2,SPR_CANTAATK3,
+	SPR_CANTAATK4,
+	SPR_WATERREADY,SPR_WATERATK1,SPR_WATERATK2,SPR_WATERATK3,
+	SPR_WATERATK4,
+	SPR_LAST,
+#endif
 	SPR_NULLSPRITE,
 	SPR_TOTAL
 };
@@ -831,8 +1040,36 @@ typedef enum
 	ac_badobject = -1,
 	ac_no,
 	ac_yes
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	,
+	ac_allways
+#endif
 } activetype;
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+typedef enum
+{
+	nothing,
+	playerobj,
+	inertobj,
+	guardobj,
+	officerobj,
+	ssobj,
+	dogobj,
+	mutantobj,
+	bossobj,
+	schabbobj,
+	gretelobj,
+	giftobj,
+	fatobj,
+	mechahitlerobj,
+	realhitlerobj,
+	rocketobj,
+	needleobj,
+	flameobj,
+	missileobj
+} classtype;
+#else
 typedef enum
 {
 	nothing,
@@ -866,7 +1103,41 @@ typedef enum
 	hrocketobj,
 	sparkobj
 } classtype;
+#endif /* GAMEVER_NOAH3D */
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+typedef enum
+{
+	dressing,
+	block,
+	bo_alpo,
+	bo_firstaid,
+	bo_key1,
+	bo_key2,
+	bo_key3,
+	bo_key4,
+	bo_cross,
+	bo_chalice,
+	bo_bible,
+	bo_crown,
+	bo_clip,
+	bo_clip2 = bo_clip,
+	bo_machinegun,
+	bo_chaingun,
+	bo_food,
+	bo_fullheal,
+	bo_25clip,
+	bo_chest,
+	bo_bandolier,
+	bo_flamethrower,
+	bo_gascan,
+	bo_launcher,
+	bo_missiles,
+	bo_map,
+	bo_exit,
+	bo_secret
+} stat_t;
+#else
 typedef enum
 {
 	dressing,
@@ -891,6 +1162,7 @@ typedef enum
 	bo_25clip,
 	bo_spear
 } stat_t;
+#endif /* GAMEVER_NOAH3D */
 
 typedef enum
 {
@@ -905,6 +1177,23 @@ typedef enum
 	nodir
 } dirtype;
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+typedef enum
+{
+	en_guard,
+	en_officer,
+	en_ss,
+	en_dog,
+	en_mutant,
+	en_boss,
+	en_schabbs,
+	en_gretel,
+	en_gift,
+	en_fat,
+	en_hitler,
+	NUMENEMIES
+} enemy_t;
+#else
 #define NUMENEMIES 22
 typedef enum
 {
@@ -931,6 +1220,7 @@ typedef enum
 	en_will,
 	en_death
 } enemy_t;
+#endif /* GAMEVER_NOAH3D */
 
 typedef struct statestruct
 {
@@ -972,6 +1262,9 @@ typedef struct doorstruct
 {
 	byte tilex, tiley;
 	boolean vertical;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	boolean seen;
+#endif
 	byte lock;
 	enum
 	{
@@ -1006,6 +1299,9 @@ typedef struct objstruct
 	fixed x, y;
 	unsigned tilex, tiley;
 	byte areanumber;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	byte snore; // 2.6 number. Upper is frame, Lower is tics*2
+#endif
 
 	int viewx;
 	unsigned viewheight;
@@ -1019,7 +1315,11 @@ typedef struct objstruct
 	struct objstruct *next, *prev;
 } objtype;
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+#define NUMBUTTONS 10
+#else
 #define NUMBUTTONS 8
+#endif
 enum
 {
 	bt_nobutton = -1,
@@ -1031,15 +1331,29 @@ enum
 	bt_readypistol,
 	bt_readymachinegun,
 	bt_readychaingun
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	,
+	bt_readycantaloupe,
+	bt_readywatermelon
+#endif
 };
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+#define NUMWEAPONS 7
+#else
 #define NUMWEAPONS 4
+#endif
 typedef enum
 {
 	wp_knife,
 	wp_pistol,
 	wp_machinegun,
 	wp_chaingun
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	,
+	wp_flamethrower,
+	wp_missile
+#endif
 } weapontype;
 
 enum
@@ -1064,6 +1378,17 @@ typedef struct
 	int lives;
 	int health;
 	int ammo;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+	int treasure;
+	int maxammo;
+	int gas;
+	int missiles;
+	boolean machinegun;
+	boolean chaingun;
+	boolean missile;
+	boolean flamethrower;
+	boolean automap;
+#endif
 	int keys;
 	weapontype bestweapon, weapon, chosenweapon;
 
@@ -1109,6 +1434,10 @@ extern int centerx;
 extern int shootdelta;
 
 extern boolean startgame, loadedgame;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+extern boolean noquestions, nofloors;
+extern int questionnum;
+#endif
 extern int mouseadjustment;
 
 /* math tables */
@@ -1145,6 +1474,12 @@ int WolfMain(int argc, char *argv[]);
 */
 
 extern boolean ingame;
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+extern int endtics, fizzlein;
+extern int MapEpisode[];
+extern int MapLevel[];
+void DrawTreasure(void);
+#endif
 extern gametype gamestate;
 extern int doornum;
 
@@ -1248,6 +1583,9 @@ void StartBonusFlash(void);
 
 void IntroScreen(void);
 void PreloadGraphics(void);
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+void Briefing(int mission, boolean credits);
+#endif
 void LevelCompleted(void);
 void CheckHighScore(long score, word other);
 void Victory(void);
@@ -1286,6 +1624,12 @@ fixed FixedByFrac(fixed a, fixed b);
 void BuildTables();
 void CalcTics();
 void ThreeDRefresh();
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+extern int FloorTile[];
+void WallRefresh(void);
+void DrawScaleds(void);
+void UpdatePaletteShifts(void);
+#endif
 
 void FizzleFade(boolean abortable, int frames, int color);
 
@@ -1349,6 +1693,9 @@ void GiveWeapon(int weapon);
 void DrawAmmo(void);
 void GiveAmmo(int ammo);
 void GiveKey(int key);
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+void GiveTreasure(int treasure);
+#endif
 void GetBonus(statobj_t *check);
 
 void Thrust(int angle, long speed);
@@ -1386,6 +1733,11 @@ void PlaceItemType(int itemtype, int tilex, int tiley);
 void PushWall(int checkx, int checky, int dir);
 void OperateDoor(int door);
 void InitAreas(void);
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+void FlameAttack(objtype *ob);
+void MissileAttack(objtype *ob);
+void SpawnExit(int tilex, int tiley, boolean secret);
+#endif
 
 /*
 =============================================================================
@@ -1399,7 +1751,11 @@ void A_DeathScream(objtype *ob);
 
 void SpawnBJVictory(void);
 
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+void SpawnStand(enemy_t which, int tilex, int tiley, int dir, boolean ambush);
+#else
 void SpawnStand(enemy_t which, int tilex, int tiley, int dir);
+#endif
 void SpawnPatrol(enemy_t which, int tilex, int tiley, int dir);
 
 void US_ControlPanel(byte);
@@ -1430,6 +1786,42 @@ void SpawnHitler(int tilex, int tiley);
 
 extern void HelpScreens();
 extern void EndText();
+
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION */
+/*
+=============================================================================
+
+						 WL_MAP DEFINITIONS
+
+=============================================================================
+*/
+
+void AutoMap(void);
+void PollControls(void);
+void CharacterCast(void);
+void SimpleScaleShape(int xcenter, int shapenum, unsigned height);
+
+/*
+=============================================================================
+
+						 WL_QUIZ DEFINITIONS
+
+=============================================================================
+*/
+
+int AskQuestion(int question);
+
+/*
+=============================================================================
+
+						 WOLFHACK DEFINITIONS
+
+=============================================================================
+*/
+
+void LoadFloorTiles(int tile);
+void DrawPlanes(void);
+#endif
 
 #include "wl_act3.h"
 

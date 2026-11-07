@@ -403,7 +403,11 @@ void PageLayout(boolean shownumber)
 	//
 	// clear the screen
 	//
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	VW_Bar(0, 0, 320, 200, 0x24);
+#else
 	VW_Bar(0, 0, 320, 200, BACKCOLOR);
+#endif
 	VWB_DrawPic(0, 0, H_TOPWINDOWPIC);
 	VWB_DrawPic(0, 8, H_LEFTWINDOWPIC);
 	VWB_DrawPic(312, 8, H_RIGHTWINDOWPIC);
@@ -465,7 +469,11 @@ void PageLayout(boolean shownumber)
 		px = 213;
 		itoa(numpages, str2, 10);
 		strcat(str, str2);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+		fontcolor = 0x10;
+#else
 		fontcolor = 0x4f; //12^BACKCOLOR;
+#endif
 
 		VW_DrawPropString(str);
 	}
@@ -570,7 +578,11 @@ void ShowArticle(char *article)
 	oldfontnumber = fontnumber;
 	fontnumber = 0;
 	CA_CacheGrChunk(STARTFONT);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	VW_Bar(0, 0, 320, 200, 0x24);
+#else
 	VW_Bar(0, 0, 320, 200, BACKCOLOR);
+#endif
 	CacheLayoutGraphics();
 
 	newpage = true;
@@ -618,8 +630,10 @@ void ShowArticle(char *article)
 			break;
 		}
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
 		if (IN_KeyDown(sc_Tab) && IN_KeyDown(sc_P) && MS_CheckParm("debugmode"))
 			PicturePause();
+#endif
 
 	} while (LastScan != sc_Escape);
 
@@ -629,7 +643,9 @@ void ShowArticle(char *article)
 
 /* ======================================================================== */
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - No T_ENDART1
 #define endextern T_ENDART1
+#endif
 #define helpextern T_HELPART
 
 /*
@@ -657,6 +673,7 @@ void HelpScreens()
 	FreeMusic();
 }
 
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - No END ARTICLES
 //
 // END ARTICLES
 //
@@ -681,5 +698,6 @@ void EndText()
 
 	FreeMusic();
 }
+#endif /* GAMEVER_NOAH3D */
 
 #endif

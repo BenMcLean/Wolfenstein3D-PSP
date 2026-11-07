@@ -42,10 +42,18 @@
 #define STR_JOYEN "Joystick Enabled"
 #define STR_CUSTOM "Customize controls"
 
+/* PSP_DEVIATION: S3DNA RESTORATION */
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define STR_DADDY "Super Easy"
+#define STR_HURTME "Easy"
+#define STR_BRINGEM "Normal"
+#define STR_DEATH "Hard"
+#else
 #define STR_DADDY "Can I play, Daddy?"
 #define STR_HURTME "Don't hurt me."
 #define STR_BRINGEM "Bring 'em on!"
 #define STR_DEATH "I am Death incarnate!"
+#endif
 
 #define STR_SLOW "Slow"
 #define STR_FAST "Fast"
@@ -107,7 +115,17 @@
 
 #define STR_SEEAGAIN "Let's see that again!"
 
-#ifdef SPEAR
+#ifdef GAMEVER_NOAH3D /* PSP_DEVIATION: S3DNA RESTORATION (the PSP uses 'X' for yes) */
+#define ENDSTR1 "Are you sure you're\nready to quit?.\nPress 'X' to Quit."
+#define ENDSTR2 "What? Quitting already?\nPress 'X' to Quit."
+#define ENDSTR3 "Are a few hungry animals\ntoo tough for you?\nPress 'X' to Quit."
+#define ENDSTR4 "Giving up so soon?\nPress 'X' to Quit."
+#define ENDSTR5 "Be sure to take your\numbrella, it's wet out there.\nPress 'X' to Quit."
+#define ENDSTR6 "You're going to let\nthose animals run free?\nPress 'X' to Quit."
+#define ENDSTR7 "Did the animals wear\nyou out?\nPress 'X' to Quit."
+#define ENDSTR8 "Are you monkeying around or\ndo you really want to quit?\nPress 'X' to Quit."
+#define ENDSTR9 "The animals might get\nhungry if you're gone\ntoo long!\nPress 'X' to Quit."
+#elif defined(SPEAR)
 #define ENDSTR1 "Heroes don't quit, but \n go ahead and press 'X' \n if you aren't one."
 #define ENDSTR2 "Press 'X' to quit,\n or press 'O' to enjoy \n more violent diversion."
 #define ENDSTR3 "Depressing the 'X' key means \n you must return to the \n humdrum workday world."

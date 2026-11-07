@@ -10,12 +10,19 @@
 extern int mapon;
 extern maptype *mapheaderseg[];
 
+// PSP_DEVIATION: S3DNA RESTORATION - S3DNA draws the mouse background picture 8 pixels lower
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+#define MOUSELBACKY 192
+#else
+#define MOUSELBACKY 184
+#endif
+
 //
 // PRIVATE PROTOTYPES
 //
 void CP_ReadThis();
 
-#ifdef UPLOAD
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 #define STARTITEM readthis
 #else
 #define STARTITEM newgame
@@ -34,7 +41,7 @@ static char endStrings[9][120] =
 		ENDSTR9};
 
 CP_iteminfo
-#ifdef UPLOAD
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 	MainItems = {MENU_X, MENU_Y, 9, STARTITEM, 24},
 #else
 	MainItems = {MENU_X, MENU_Y, 8, STARTITEM, 24},
@@ -54,7 +61,7 @@ CP_itemtype
 			{1, STR_CL, (MenuFunc)CP_Control},
 			{1, STR_LG, (MenuFunc)CP_LoadGame},
 			{0, STR_SG, (MenuFunc)CP_SaveGame},
-#ifdef UPLOAD
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 			{2, "Read This!", (MenuFunc)CP_ReadThis},
 #endif
 			{1, STR_VS, (MenuFunc)CP_ViewScores},
@@ -91,6 +98,33 @@ CP_itemtype
 			// {0,"",0}
 			{1, "No Options Availible", 0}},
 
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - the six days on the ark
+	NewEmenu[] =
+		{
+			{1, "Carl the Camel\n"
+				"Start at level 1-1",
+			 0},
+			{0, "", 0},
+			{3, "Ginny the Giraffe\n"
+				"Start at level 2-1",
+			 0},
+			{0, "", 0},
+			{3, "Melvin the Monkey\n"
+				"Start at level 3-1",
+			 0},
+			{0, "", 0},
+			{3, "Kerry the Kangaroo\n"
+				"Start at level 4-1",
+			 0},
+			{0, "", 0},
+			{3, "Ernie the Elephant\n"
+				"Start at level 5-1",
+			 0},
+			{0, "", 0},
+			{3, "Burt the Bear\n"
+				"Start at level 6-1",
+			 0}},
+#else
 #ifndef SPEAR
 	NewEmenu[] =
 		{
@@ -118,6 +152,7 @@ CP_itemtype
 				"Confrontation",
 			 0}},
 #endif
+#endif /* GAMEVER_NOAH3D */
 
 	NewMenu[] =
 		{
@@ -429,7 +464,7 @@ void DrawMainMenu()
 {
 	ClearMScreen();
 
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 	DrawStripes(10);
 	VWB_DrawPic(84, 0, C_OPTIONSPIC);
 
@@ -456,7 +491,7 @@ void DrawMainMenu()
 	VW_UpdateScreen();
 }
 
-#ifdef UPLOAD
+#if defined(UPLOAD) || defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
 ////////////////////////////////////////////////////////////////////
 //
 // READ THIS!
@@ -464,7 +499,11 @@ void DrawMainMenu()
 ////////////////////////////////////////////////////////////////////
 void CP_ReadThis()
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	StartCPMusic(NOAH01_MUS);
+#else
 	StartCPMusic(CORNER_MUS);
+#endif
 	HelpScreens();
 	StartCPMusic(MENUSONG);
 }
@@ -527,6 +566,10 @@ int CP_CheckQuick(unsigned scancode)
 			CA_CacheGrChunk(C_CURSOR2PIC);
 			CA_CacheGrChunk(C_DISKLOADING1PIC);
 			CA_CacheGrChunk(C_DISKLOADING2PIC);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			CA_CacheGrChunk(C_DISKLOADING3PIC);
+			CA_CacheGrChunk(C_DISKLOADING4PIC);
+#endif
 			CA_CacheGrChunk(C_SAVEGAMEPIC);
 			CA_CacheGrChunk(C_MOUSELBACKPIC);
 #else
@@ -558,6 +601,10 @@ int CP_CheckQuick(unsigned scancode)
 			CA_UnCacheGrChunk(C_CURSOR2PIC);
 			CA_UnCacheGrChunk(C_DISKLOADING1PIC);
 			CA_UnCacheGrChunk(C_DISKLOADING2PIC);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			CA_UnCacheGrChunk(C_DISKLOADING3PIC);
+			CA_UnCacheGrChunk(C_DISKLOADING4PIC);
+#endif
 			CA_UnCacheGrChunk(C_SAVEGAMEPIC);
 			CA_UnCacheGrChunk(C_MOUSELBACKPIC);
 #else
@@ -592,6 +639,10 @@ int CP_CheckQuick(unsigned scancode)
 			CA_CacheGrChunk(C_CURSOR2PIC);
 			CA_CacheGrChunk(C_DISKLOADING1PIC);
 			CA_CacheGrChunk(C_DISKLOADING2PIC);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			CA_CacheGrChunk(C_DISKLOADING3PIC);
+			CA_CacheGrChunk(C_DISKLOADING4PIC);
+#endif
 			CA_CacheGrChunk(C_LOADGAMEPIC);
 			CA_CacheGrChunk(C_MOUSELBACKPIC);
 #else
@@ -624,6 +675,10 @@ int CP_CheckQuick(unsigned scancode)
 			CA_UnCacheGrChunk(C_CURSOR2PIC);
 			CA_UnCacheGrChunk(C_DISKLOADING1PIC);
 			CA_UnCacheGrChunk(C_DISKLOADING2PIC);
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+			CA_UnCacheGrChunk(C_DISKLOADING3PIC);
+			CA_UnCacheGrChunk(C_DISKLOADING4PIC);
+#endif
 			CA_UnCacheGrChunk(C_LOADGAMEPIC);
 			CA_UnCacheGrChunk(C_MOUSELBACKPIC);
 #else
@@ -692,6 +747,8 @@ void CP_ViewScores()
 #ifdef SPEAR
 	UnCacheLump(OPTIONS_LUMP_START, OPTIONS_LUMP_END);
 	StartCPMusic(XAWARD_MUS);
+#elif defined(GAMEVER_NOAH3D) // PSP_DEVIATION: S3DNA RESTORATION
+	StartCPMusic(NOAH11_MUS);
 #else
 	StartCPMusic(ROSTER_MUS);
 #endif
@@ -755,7 +812,30 @@ firstpart:
 			}
 			else
 			{
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - episodes are starting levels
+				switch (which / 2)
+				{
+				case 1:
+					episode = 3;
+					break;
+				case 2:
+					episode = 7;
+					break;
+				case 3:
+					episode = 12;
+					break;
+				case 4:
+					episode = 17;
+					break;
+				case 5:
+					episode = 23;
+					break;
+				default:
+					episode = 0;
+				}
+#else
 				episode = which / 2;
+#endif
 				which = 1;
 			}
 			break;
@@ -838,7 +918,7 @@ void DrawNewEpisode(void)
 	int i;
 
 	ClearMScreen();
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 
 	DrawWindow(NE_X - 4, NE_Y - 4, NE_W + 8, NE_H + 8, BKGDCOLOR);
 	SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
@@ -865,7 +945,7 @@ void DrawNewEpisode(void)
 void DrawNewGame(void)
 {
 	ClearMScreen();
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 
 	SETFONTCOLOR(READHCOLOR, BKGDCOLOR);
 	PrintX = NM_X + 20;
@@ -1007,7 +1087,7 @@ void DrawSoundMenu(void)
 	// DRAW SOUND MENU
 	//
 	ClearMScreen();
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 
 	DrawWindow(SM_X - 8, SM_Y1 - 3, SM_W, SM_H1, BKGDCOLOR);
 	DrawWindow(SM_X - 8, SM_Y2 - 3, SM_W, SM_H2, BKGDCOLOR);
@@ -1219,7 +1299,7 @@ void DrawLoadSaveScreen(int loadsave)
 
 	ClearMScreen();
 	fontnumber = 1;
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 	DrawWindow(LSM_X - 10, LSM_Y - 5, LSM_W, LSM_H, BKGDCOLOR);
 	DrawStripes(10);
 
@@ -1527,7 +1607,7 @@ void CP_Control()
 void DrawMouseSens()
 {
 	ClearMScreen();
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 	DrawWindow(10, 80, 300, 30, BKGDCOLOR);
 
 	WindowX = 0;
@@ -1635,37 +1715,22 @@ void MouseSensitivity()
 //
 void DrawCtlScreen()
 {
-	int i, x, y;
+	int i;
 
 	ClearMScreen();
 	DrawStripes(10);
 	VWB_DrawPic(80, 0, C_CONTROLPIC);
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 	DrawWindow(CTL_X - 8, CTL_Y - 5, CTL_W, CTL_H, BKGDCOLOR);
 
 	WindowX = 0;
 	WindowW = 320;
 	SETFONTCOLOR(TEXTCOLOR, BKGDCOLOR);
 
-	if (JoysPresent[0])
-		CtlMenu[1].active =
-			CtlMenu[2].active =
-				CtlMenu[3].active = 1;
-
-	CtlMenu[2].active = CtlMenu[3].active = joystickenabled;
-
-	if (MousePresent)
-	{
-		CtlMenu[4].active =
-			CtlMenu[0].active = 1;
-	}
-
-	CtlMenu[4].active = mouseenabled;
+	// PSP_DEVIATION: CtlMenu has only one item; writes to CtlMenu[1..4] were out of bounds and have been removed
 
 	DrawMenu(&CtlItems, &CtlMenu[0]);
 
-	x = CTL_X + CtlItems.indent - 24;
-	y = CTL_Y + 3;
 	/*if (mouseenabled)
    VWB_DrawPic(x,y,C_SELECTEDPIC);
  else
@@ -2119,7 +2184,7 @@ void DrawCustomScreen(void)
 	ClearMScreen();
 	WindowX = 0;
 	WindowW = 320;
-	VWB_DrawPic(112, 184, C_MOUSELBACKPIC);
+	VWB_DrawPic(112, MOUSELBACKY, C_MOUSELBACKPIC);
 	DrawStripes(10);
 	VWB_DrawPic(80, 0, C_CUSTOMIZEPIC);
 
@@ -3114,6 +3179,9 @@ void DrawMenuGun(CP_iteminfo *iteminfo)
 ///////////////////////////////////////////////////////////////////////////
 void DrawStripes(int y)
 {
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no title stripes
+	return;
+#endif
 #ifndef SPEAR
 	VW_Bar(0, y, 320, 24, 0);
 	VW_Hlin(0, 319, y + 22, STRIPE);
@@ -3137,6 +3205,15 @@ void CheckForEpisodes()
 {
 #if defined(HAVE_FFBLK)
 	struct ffblk f;
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (!findfirst("*." GAMEEXT, &f, FA_ARCH))
+	{
+		strcpy(extension, GAMEEXT);
+		return;
+	}
+	else
+		Quit("Unable to find data files!\n");
+#endif
 //
 // ENGLISH
 //
@@ -3203,7 +3280,15 @@ void CheckForEpisodes()
 #elif defined(HAVE_FINDDATA)
 
 	struct _finddata_t f;
-
+#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
+	if (_findfirst("*." GAMEEXT, &f) != -1)
+	{
+		strcpy(extension, GAMEEXT);
+		return;
+	}
+	else
+		Quit("Unable to find data files!\n");
+#endif
 //
 // ENGLISH
 //
