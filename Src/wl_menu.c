@@ -3209,6 +3209,20 @@ void CheckForEpisodes()
 	if (!findfirst("*." GAMEEXT, &f, FA_ARCH))
 	{
 		strcpy(extension, GAMEEXT);
+		// PSP_DEVIATION: S3DNA RESTORATION - full game, all six episodes are unlocked (the early return skipped this)
+		NewEmenu[2].active =
+			NewEmenu[4].active =
+				NewEmenu[6].active =
+					NewEmenu[8].active =
+						NewEmenu[10].active =
+							EpisodeSelect[1] =
+								EpisodeSelect[2] =
+									EpisodeSelect[3] =
+										EpisodeSelect[4] =
+											EpisodeSelect[5] = 1;
+		// PSP_DEVIATION: S3DNA RESTORATION - the early return skipped these, so saves/config had no extension
+		strcat(configname, extension);
+		strcat(SaveName, extension);
 		return;
 	}
 	else
@@ -3284,6 +3298,20 @@ void CheckForEpisodes()
 	if (_findfirst("*." GAMEEXT, &f) != -1)
 	{
 		strcpy(extension, GAMEEXT);
+		// PSP_DEVIATION: S3DNA RESTORATION - full game, all six episodes are unlocked (the early return skipped this)
+		NewEmenu[2].active =
+			NewEmenu[4].active =
+				NewEmenu[6].active =
+					NewEmenu[8].active =
+						NewEmenu[10].active =
+							EpisodeSelect[1] =
+								EpisodeSelect[2] =
+									EpisodeSelect[3] =
+										EpisodeSelect[4] =
+											EpisodeSelect[5] = 1;
+		// PSP_DEVIATION: S3DNA RESTORATION - the early return skipped these, so saves/config had no extension
+		strcat(configname, extension);
+		strcat(SaveName, extension);
 		return;
 	}
 	else
