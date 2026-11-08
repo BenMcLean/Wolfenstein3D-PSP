@@ -95,6 +95,11 @@ DEFAULT_MENUDIR = menu/WOLF3D
 menu_asset = $(firstword $(wildcard $(MENUDIR)/$(1) $(DEFAULT_MENUDIR)/$(1)))
 PSP_EBOOT_ICON = $(call menu_asset,ICON0.png)
 PSP_EBOOT_PIC1 = $(call menu_asset,PIC1.png)
+# PIC0.png (310x180, drawn over the background) is optional and per game only, with no fallback: menu/<GAME without WOLF3D_ prefix>/PIC0.png
+PIC0_DIR = menu/$(patsubst WOLF3D_%,%,$(GAME))
+ifneq ($(wildcard $(PIC0_DIR)/PIC0.png),)
+	PSP_EBOOT_PIC0 = $(PIC0_DIR)/PIC0.png
+endif
 ifneq ($(call menu_asset,SND0.AT3),)
 	PSP_EBOOT_SND0 = $(call menu_asset,SND0.AT3)
 endif
