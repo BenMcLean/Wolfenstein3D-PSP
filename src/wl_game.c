@@ -1345,7 +1345,11 @@ void Died()
 	FinishPaletteShifts();
 
 #ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - no fizzle fade, no wait for a key
-	VW_Bar(xoffset, yoffset, viewwidth, viewheight, 4);
+	// PSP_DEVIATION: xoffset, yoffset, viewwidth and viewheight are already in screen pixels (see SetViewSize),
+	// but VW_Bar takes 320x200 coordinates and scales them by xfrac/yfrac. Passing screen pixels scaled the bar
+	// a second time (about 1.6x), so it was drawn far past the end of gfxbuf and overwrote the heap (corrupting
+	// the OPL tables, graphics and malloc's free list). VL_Bar takes screen pixels, like ClearScreen does.
+	VL_Bar(xoffset, yoffset, viewwidth, viewheight, 4);
 	IN_ClearKeysDown();
 
 	gamestate.lives--;
