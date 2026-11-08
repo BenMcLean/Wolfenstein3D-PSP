@@ -2024,7 +2024,8 @@ void CheckHighScore(long score, word other)
 	int n;
 	HighScore myscore;
 
-	strcpy(myscore.name, "");
+	// PSP has no text entry: use a default name
+	strcpy(myscore.name, "PSP Enjoyer");
 	myscore.score = score;
 #ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
 	myscore.episode = gamestate.mapon;
@@ -2058,30 +2059,8 @@ void CheckHighScore(long score, word other)
 
 	VW_FadeIn();
 
-	if (n != -1)
-	{
-		//
-		// got a high score
-		//
-		PrintY = 76 + (16 * n);
-#ifndef SPEAR
-		PrintX = 4 * 8;
-		backcolor = BORDCOLOR;
-		fontcolor = 15;
-		US_LineInput(PrintX, PrintY, Scores[n].name, NULL, true, MaxHighName, 100);
-#else
-		PrintX = 16;
-		fontnumber = 1;
-		VW_Bar(PrintX - 2, PrintY - 2, 145, 15, 0x9c);
-		VW_UpdateScreen();
-		backcolor = 0x9c;
-		fontcolor = 15;
-		US_LineInput(PrintX, PrintY, Scores[n].name, NULL, true, MaxHighName, 130);
-#endif
-	}
-	else
-	{
-		IN_ClearKeysDown();
-		IN_UserInput(500);
-	}
+	// PSP has no text entry: a qualifying score is recorded under the default
+	// name "PSP Enjoyer", and we wait the same as for a non-qualifying score.
+	IN_ClearKeysDown();
+	IN_UserInput(500);
 }

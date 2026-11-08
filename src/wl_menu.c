@@ -1401,28 +1401,18 @@ int CP_SaveGame(int quick)
 			strcpy(input, &SaveGameNames[which][0]);
 			name[7] = which + '0';
 
+			// PSP has no text entry: save immediately using the default
+			// name (the current map's name) instead of US_LineInput.
 			fontnumber = 0;
-			if (!SaveGamesAvail[which])
-				VW_Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1, LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
-			VW_UpdateScreen();
+			strncpy(input, &mapheaderseg[mapon]->name[0], 31);
+			input[31] = 0;
 
-			if (US_LineInput(LSM_X + LSItems.indent + 2, LSM_Y + which * 13 + 1, input, &mapheaderseg[mapon]->name[0], true, 31, LSM_W - LSItems.indent - 30))
-			{
-				SaveGamesAvail[which] = 1;
-				DrawLSAction(1);
-				strcpy(&SaveGameNames[which][0], input);
-				SaveTheGame(name, input, LSA_X + 8, LSA_Y + 5);
-				ShootSnd();
-				exit = 1;
-			}
-			else
-			{
-				VW_Bar(LSM_X + LSItems.indent + 1, LSM_Y + which * 13 + 1, LSM_W - LSItems.indent - 16, 10, BKGDCOLOR);
-				PrintLSEntry(which, HIGHLIGHT);
-				VW_UpdateScreen();
-				SD_PlaySound(ESCPRESSEDSND);
-				continue;
-			}
+			SaveGamesAvail[which] = 1;
+			DrawLSAction(1);
+			strcpy(&SaveGameNames[which][0], input);
+			SaveTheGame(name, input, LSA_X + 8, LSA_Y + 5);
+			ShootSnd();
+			exit = 1;
 
 			fontnumber = 1;
 			break;
