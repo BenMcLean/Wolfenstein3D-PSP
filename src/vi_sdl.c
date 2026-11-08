@@ -243,8 +243,35 @@ void ToggleAutoRun()
 	sceKernelDelayThread(500 * 1000);
 }
 
+// PSP_DEVIATION: alternate control scheme (not in the original game). When set, the D-pad left/right
+// strafe and the shoulder buttons turn, instead of the D-pad turning and the shoulders strafing.
+static boolean swapturn = false;
+
+static void ToggleSwapTurn()
+{
+	swapturn = !swapturn;
+	Message(swapturn ? "Alt controls ON" : "Alt controls OFF");
+	sceKernelDelayThread(500 * 1000);
+}
+
 static int mx = 0;
 static int my = 0;
+
+// PSP_DEVIATION: maps a raw stick axis (0-255, centre 128) to -127..127. The deadzone is subtracted
+// so movement ramps up smoothly from zero at the deadzone edge to full speed at full deflection.
+#define STICK_DEADZONE 32
+static int StickAxis(int raw)
+{
+	int d = raw - 128;
+	int mag = abs(d);
+
+	if (mag <= STICK_DEADZONE)
+		return 0;
+	mag = (mag - STICK_DEADZONE) * 127 / (127 - STICK_DEADZONE);
+	if (mag > 127)
+		mag = 127;
+	return d < 0 ? -mag : mag;
+}
 
 void INL_Update()
 {
@@ -310,33 +337,12 @@ void INL_Update()
 		if (!(buttons & PSP_CTRL_UP))
 		{
 			// up just released
-			keyboard_handler(sc_1, 0);		 // weapon 1 not pressed
 			keyboard_handler(sc_UpArrow, 0); // up not pressed
 		}
-		else
+		else if (!(buttons & PSP_CTRL_CIRCLE))
 		{
-			// up just pressed
-			if (buttons & PSP_CTRL_CIRCLE)
-				keyboard_handler(sc_1, 1); // weapon 1 pressed
-			else
-				keyboard_handler(sc_UpArrow, 1); // up pressed
-		}
-	}
-	if (new_buttons & PSP_CTRL_RIGHT)
-	{
-		if (!(buttons & PSP_CTRL_RIGHT))
-		{
-			// right just released
-			keyboard_handler(sc_2, 0);			// weapon 2 not pressed
-			keyboard_handler(sc_RightArrow, 0); // right not pressed
-		}
-		else
-		{
-			// right just pressed
-			if (buttons & PSP_CTRL_CIRCLE)
-				keyboard_handler(sc_2, 1); // weapon 2 pressed
-			else
-				keyboard_handler(sc_RightArrow, 1); // right pressed
+			// up just pressed (O + up does nothing)
+			keyboard_handler(sc_UpArrow, 1); // up pressed
 		}
 	}
 	if (new_buttons & PSP_CTRL_DOWN)
@@ -344,49 +350,41 @@ void INL_Update()
 		if (!(buttons & PSP_CTRL_DOWN))
 		{
 			// down just released
-			keyboard_handler(sc_3, 0);		   // weapon 3 not pressed
 			keyboard_handler(sc_DownArrow, 0); // down not pressed
 		}
-		else
+		else if (!(buttons & PSP_CTRL_CIRCLE))
 		{
-			// down just pressed
-			if (buttons & PSP_CTRL_CIRCLE)
-				keyboard_handler(sc_3, 1); // weapon 3 pressed
-			else
-				keyboard_handler(sc_DownArrow, 1); // down pressed
+			// down just pressed (O + down does nothing)
+			keyboard_handler(sc_DownArrow, 1); // down pressed
 		}
 	}
-	if (new_buttons & PSP_CTRL_LEFT)
+	// BEGIN PSP_DEVIATION: left/right on the D-pad and the shoulder buttons.
+	// Menus: D-pad left/right move the cursor and the shoulders send Alt + arrow, edge-triggered as before.
+	// In a level all four are level-triggered and written straight into the key arrays (so LastScan is
+	// not disturbed and IN_ClearKeysDown cannot leave them stuck off). Normally the D-pad turns and the
+	// shoulders strafe; with swapturn (toggled with Select) the D-pad strafes and the shoulders turn.
+	// O + D-pad left/right, or O + L/R, select the previous/next weapon.
+	if (!ingame && (new_buttons & PSP_CTRL_RIGHT))
+	{
+		if (!(buttons & PSP_CTRL_RIGHT))
+			keyboard_handler(sc_RightArrow, 0); // right not pressed
+		else if (!(buttons & PSP_CTRL_CIRCLE))
+			keyboard_handler(sc_RightArrow, 1); // right pressed
+	}
+	if (!ingame && (new_buttons & PSP_CTRL_LEFT))
 	{
 		if (!(buttons & PSP_CTRL_LEFT))
-		{
-			// left just released
-			keyboard_handler(sc_4, 0);		   // weapon 4 not pressed
 			keyboard_handler(sc_LeftArrow, 0); // left not pressed
-		}
-		else
-		{
-			// left just pressed
-			if (buttons & PSP_CTRL_CIRCLE)
-				keyboard_handler(sc_4, 1); // weapon 4 pressed
-			else
-				keyboard_handler(sc_LeftArrow, 1); // left pressed
-		}
+		else if (!(buttons & PSP_CTRL_CIRCLE))
+			keyboard_handler(sc_LeftArrow, 1); // left pressed
 	}
-	// BEGIN PSP_DEVIATION: shoulder buttons strafe in a level.
-	// The strafe keys follow the physical buttons on every update (level-triggered) and are written
-	// straight into the key arrays, so LastScan is not disturbed and IN_ClearKeysDown cannot leave
-	// them stuck off. Outside a level the shoulders keep their old menu behaviour (Alt + arrow).
-	Keyboard[sc_StrafeLeft] = InternalKeyboard[sc_StrafeLeft] = (pad.Buttons & PSP_CTRL_LTRIGGER) != 0;
-	Keyboard[sc_StrafeRight] = InternalKeyboard[sc_StrafeRight] = (pad.Buttons & PSP_CTRL_RTRIGGER) != 0;
-#ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
-	// BEGIN PSP_DEVIATION: S3DNA RESTORATION - weapons 5 (O + L) and 6 (O + R), the D-pad only has room for 1-4
-	if (new_buttons & PSP_CTRL_LTRIGGER)
-		keyboard_handler(sc_5, (buttons & PSP_CTRL_LTRIGGER) && (buttons & PSP_CTRL_CIRCLE) && ingame);
-	if (new_buttons & PSP_CTRL_RTRIGGER)
-		keyboard_handler(sc_6, (buttons & PSP_CTRL_RTRIGGER) && (buttons & PSP_CTRL_CIRCLE) && ingame);
-	// END PSP_DEVIATION
-#endif
+	if (ingame && (buttons & PSP_CTRL_CIRCLE))
+	{
+		if ((new_buttons & (PSP_CTRL_LTRIGGER | PSP_CTRL_LEFT)) & buttons)
+			weaponcycle = -1; // previous weapon
+		if ((new_buttons & (PSP_CTRL_RTRIGGER | PSP_CTRL_RIGHT)) & buttons)
+			weaponcycle = 1; // next weapon
+	}
 	if (new_buttons & PSP_CTRL_RTRIGGER)
 	{
 		if (!(buttons & PSP_CTRL_RTRIGGER))
@@ -418,6 +416,32 @@ void INL_Update()
 			keyboard_handler(sc_Alt, 1);	   // alt pressed
 			keyboard_handler(sc_LeftArrow, 1); // left pressed
 		}
+	}
+	{
+		// Level-triggered left/right/strafe keys (written last so they win over the edge handlers above)
+		static boolean wasingame = false;
+		boolean o = (pad.Buttons & PSP_CTRL_CIRCLE) != 0;
+		boolean dl = !o && (pad.Buttons & PSP_CTRL_LEFT);
+		boolean dr = !o && (pad.Buttons & PSP_CTRL_RIGHT);
+		boolean sl = !o && (pad.Buttons & PSP_CTRL_LTRIGGER);
+		boolean sr = !o && (pad.Buttons & PSP_CTRL_RTRIGGER);
+
+		if (ingame)
+		{
+			Keyboard[sc_LeftArrow] = InternalKeyboard[sc_LeftArrow] = swapturn ? sl : dl;
+			Keyboard[sc_RightArrow] = InternalKeyboard[sc_RightArrow] = swapturn ? sr : dr;
+			Keyboard[sc_StrafeLeft] = InternalKeyboard[sc_StrafeLeft] = swapturn ? dl : sl;
+			Keyboard[sc_StrafeRight] = InternalKeyboard[sc_StrafeRight] = swapturn ? dr : sr;
+		}
+		else if (wasingame)
+		{
+			// left the level: don't leave a held key stuck down
+			Keyboard[sc_LeftArrow] = InternalKeyboard[sc_LeftArrow] = false;
+			Keyboard[sc_RightArrow] = InternalKeyboard[sc_RightArrow] = false;
+			Keyboard[sc_StrafeLeft] = InternalKeyboard[sc_StrafeLeft] = false;
+			Keyboard[sc_StrafeRight] = InternalKeyboard[sc_StrafeRight] = false;
+		}
+		wasingame = ingame;
 	}
 	// END PSP_DEVIATION
 	if (new_buttons & PSP_CTRL_START)
@@ -452,6 +476,8 @@ void INL_Update()
 				keyboard_handler(sc_BackSpace, 1); // BackSpace pressed
 			else if (buttons & PSP_CTRL_SQUARE)
 				keyboard_handler(sc_A, 1); // A pressed
+			else if (ingame)
+				ToggleSwapTurn(); // PSP_DEVIATION: Select swaps turn/strafe controls (in a level only)
 			else
 				keyboard_handler(sc_Enter, 1); // Enter pressed
 		}
@@ -508,14 +534,8 @@ void INL_Update()
 	}
 	else
 	{
-		if (abs(pad.Lx - 128) > 32)
-			mx = (pad.Lx - 128) >> 1;
-		else
-			mx = 0;
-		if (abs(pad.Ly - 128) > 32)
-			my = (pad.Ly - 128) >> 2;
-		else
-			my = 0;
+		mx = StickAxis(pad.Lx);
+		my = StickAxis(pad.Ly);
 	}
 }
 

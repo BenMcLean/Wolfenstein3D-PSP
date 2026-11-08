@@ -1558,40 +1558,10 @@ void CP_Control()
 	do
 	{
 		which = HandleMenu(&CtlItems, &CtlMenu[0], NULL);
-		switch (which)
-		{
-		case MOUSEENABLE:
-			mouseenabled ^= 1;
-			DrawCtlScreen();
-			CusItems.curpos = -1;
-			ShootSnd();
-			break;
-
-		case JOYENABLE:
-			joystickenabled ^= 1;
-			DrawCtlScreen();
-			CusItems.curpos = -1;
-			ShootSnd();
-			break;
-		case USEPORT2:
-			joystickport ^= 1;
-			DrawCtlScreen();
-			ShootSnd();
-			break;
-
-		case PADENABLE:
-			joypadenabled ^= 1;
-			DrawCtlScreen();
-			ShootSnd();
-			break;
-
-		case MOUSESENS:
-		case CUSTOMIZE:
-			DrawCtlScreen();
-			MenuFadeIn();
-			WaitKeyUp();
-			break;
-		}
+		// PSP_DEVIATION: CtlMenu has only the inert "No Options Availible" item, which HandleMenu reports
+		// as index 0. The original handlers mapped index 0 to "toggle mouse", which switched off the
+		// analog stick (it is read through the mouse path), and the other indexes toggled the joystick
+		// settings. Selecting the item now does nothing; O / Start leave the menu (which < 0).
 	} while (which >= 0);
 
 	MenuFadeOut();

@@ -1536,6 +1536,7 @@ extern boolean singlestep, godmode, noclip;
 // control info
 //
 extern boolean mouseenabled, joystickenabled, joypadenabled;
+extern int weaponcycle; // PSP_DEVIATION: +1 next / -1 previous weapon request
 extern int joystickport;
 extern int dirscan[4];
 extern int buttonscan[NUMBUTTONS];

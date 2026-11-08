@@ -91,10 +91,78 @@ void GiveAmmo(int ammo);
 ======================
 */
 
+// BEGIN PSP_DEVIATION: next/previous weapon (O + R / O + L). Input sets weaponcycle to +1 or -1;
+// CheckWeaponChange consumes it and steps to the next weapon the player can actually use.
+int weaponcycle = 0;
+
+#ifdef GAMEVER_NOAH3D
+#define LASTWEAPON wp_missile
+#else
+#define LASTWEAPON wp_chaingun
+#endif
+
+static boolean WeaponUsable(int i)
+{
+	switch (i)
+	{
+	case wp_knife:
+		return true;
+#ifdef GAMEVER_NOAH3D
+	case wp_flamethrower:
+		return gamestate.flamethrower && gamestate.gas;
+	case wp_missile:
+		return gamestate.missile && gamestate.missiles;
+	case wp_chaingun:
+		return gamestate.chaingun && gamestate.ammo;
+	case wp_machinegun:
+		return gamestate.machinegun && gamestate.ammo;
+#else
+	case wp_chaingun:
+	case wp_machinegun:
+		return i <= gamestate.bestweapon && gamestate.ammo;
+#endif
+	default: // wp_pistol
+		return gamestate.ammo != 0;
+	}
+}
+
+static void CycleWeapon(int dir)
+{
+	int i = gamestate.weapon;
+	int n;
+
+	for (n = 0; n <= LASTWEAPON; n++)
+	{
+		i += dir;
+		if (i > LASTWEAPON)
+			i = wp_knife;
+		else if (i < wp_knife)
+			i = LASTWEAPON;
+		if (WeaponUsable(i))
+		{
+			gamestate.weapon = gamestate.chosenweapon = i;
+#ifdef GAMEVER_NOAH3D
+			DrawAmmo();
+#else
+			DrawWeapon();
+#endif
+			return;
+		}
+	}
+}
+// END PSP_DEVIATION
+
 #ifdef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION
 void CheckWeaponChange (void)
 {
 	int	i; // PSP_DEVIATION: removed unused 'buttons'
+
+	if (weaponcycle)
+	{
+		CycleWeapon(weaponcycle);
+		weaponcycle = 0;
+		return;
+	}
 
 // *** S3DNA RESTORATION ***
 
@@ -144,6 +212,13 @@ void CheckWeaponChange (void)
 void CheckWeaponChange()
 {
 	int i;
+
+	if (weaponcycle)
+	{
+		CycleWeapon(weaponcycle);
+		weaponcycle = 0;
+		return;
+	}
 
 	if (!gamestate.ammo) // must use knife with no ammo
 		return;

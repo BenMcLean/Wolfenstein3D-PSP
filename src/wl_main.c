@@ -806,6 +806,12 @@ void NewViewSize(int width)
 	if (width < 4)
 		width = 4;
 
+	// PSP_DEVIATION: viewsize is saved in the config and fed back into NewViewSize at the next launch, so it
+	// must stay in the same units it came in (320-wide units). The original computed it back from the
+	// scaled width with an integer ratio that does not invert the scaling below, so on a 512-wide screen
+	// the saved size shrank at every launch (50 -> 20 -> 12 -> 7 -> 4).
+	viewsize = width;
+
 	width *= vwidth / 320;
 
 	if ((width * 16) > vwidth)
@@ -816,7 +822,6 @@ void NewViewSize(int width)
 
 	viewwidthwin = width * 16 * 320 / vwidth;
 	viewheightwin = width * 16 * HEIGHTRATIO * 320 / vwidth;
-	viewsize = width * 320 / vwidth;
 
 	viewwidth = width * 16;
 	viewheight = width * 16 * HEIGHTRATIO;
@@ -1201,6 +1206,10 @@ void InitGame()
 	BuildTables();
 	SetupWalls();
 
+	// PSP_DEVIATION: ignore the saved view size. Nothing in this port can change it, and config files written
+	// by earlier builds hold a size that was shrunk at every launch (see NewViewSize), so always start at
+	// the default full-screen size.
+	viewsize = 50;
 	NewViewSize(viewsize);
 
 	//

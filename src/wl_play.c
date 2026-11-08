@@ -369,7 +369,9 @@ void PollKeyboardMove()
 
 	// BEGIN PSP_DEVIATION: shoulder-button strafe, independent of turning
 	{
-		int strafemove = (buttonstate[bt_run] ^ autorun) ? RUNMOVE : BASEMOVE;
+		// Strafing stays at walking speed even while running: at RUNMOVE it is too fast to aim
+		// while circle-strafing a boss.
+		int strafemove = BASEMOVE;
 
 		if (IN_KeyDown(sc_StrafeLeft))
 			controlstrafe -= strafemove * tics;
@@ -393,8 +395,16 @@ void PollMouseMove()
 
 	IN_GetMouseDelta(&mousexmove, &mouseymove);
 
-	controlx += mousexmove * 10 / (13 - mouseadjustment);
-	controly += mouseymove * 20 / (13 - mouseadjustment);
+	// BEGIN PSP_DEVIATION: the analog stick arrives here as -127..127 per axis (deadzone applied).
+	// Full deflection equals the arrow keys: BASEMOVE walking, RUNMOVE running (Square / auto-run),
+	// scaled linearly in between for analog control.
+	{
+		int move = (buttonstate[bt_run] ^ autorun) ? RUNMOVE : BASEMOVE;
+
+		controlx += mousexmove * move * tics / 127;
+		controly += mouseymove * move * tics / 127;
+	}
+	// END PSP_DEVIATION
 }
 
 /*
