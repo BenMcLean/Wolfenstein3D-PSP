@@ -2,8 +2,8 @@ name: Build PSP EBOOTs
 
 on:
   push:
-    # Release tags are calendar versions, e.g. v2026-11-06
-    tags: ["v[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"]
+    # Release tags are calendar versions, e.g. v2026-11-06 or v2026-11-06a
+    tags: ["v*"]
   workflow_dispatch: # manual test build; produces artifacts but no release
 
 jobs:
