@@ -1,5 +1,7 @@
 Wolfenstein 3D for the Sony PSP by Ben McLean, forked from [the old PSP port by Zack & Chilly Willy](https://github.com/DanS2D/Wolfenstein3D-PSP). Fixes bugs and adds improvements, most notably Super 3D Noah's Ark support.
 
+XMB music for Super 3D Noah's Ark is by [thebitterroost](https://ocremix.org/remix/OCR04183). For the other games, it uses [*Wonderin About My Remix* by Ben McLean](https://github.com/BenMcLean/WolfSharp/blob/master/godot/BenMcLean.Wolf3D.Shared/Resources/Wondering%20About%20My%20Remix.wlf).
+
 # Building
 Building this game requires you to have the PSP Toolchain installed.
 
