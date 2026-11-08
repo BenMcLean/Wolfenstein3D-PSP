@@ -1,5 +1,13 @@
-TARGET = wolf3d
-OBJS = 	src/automap.o \
+# Out-of-tree build: intermediates (objects, .elf/.prx, PARAM.SFO) go to build/<GAME>/ and the finished
+# EBOOT.PBP goes straight to dist/<GAME>/. Nothing is written to the project root, and because every game
+# has its own build directory there is no need to clean between games.
+BUILDDIR = build/$(GAME)
+DISTDIR = dist/$(GAME)
+TARGET = $(BUILDDIR)/wolf3d
+PSP_EBOOT = $(DISTDIR)/EBOOT.PBP
+PSP_EBOOT_SFO = $(BUILDDIR)/PARAM.SFO
+
+SRC_OBJS = 	src/automap.o \
 		src/ff_psp.o \
 		src/id_ca.o \
 		src/id_us.o \
@@ -26,6 +34,8 @@ OBJS = 	src/automap.o \
 		src/wl_state.o \
 		src/wl_map.o \
 		src/wl_quiz.o \
+
+OBJS = $(patsubst src/%.o,$(BUILDDIR)/%.o,$(SRC_OBJS))
 
 ## game selection: make GAME=<name>
 # GAME is the WMODE macro from src/include/version.h, and also names the data directory:
@@ -65,7 +75,8 @@ PSP_EBOOT_TITLE = $(TITLE_$(GAME))
 
 # PSP_DEVIATION: pin C standard; modern GCC defaults to C23 where false/true are keywords (breaks id_heads.h enum)
 # PSP_DEVIATION: -fcommon; GCC 10+ defaults to -fno-common, but headers here contain tentative definitions (menuitems, pad)
-CFLAGS = -std=gnu99 -fcommon -O2 -G0 -Wall -g -DHAVE_FFBLK -DDOSISM -DWMODE=$(GAME)
+# -MMD -MP: write header dependency files next to the objects so edits to headers trigger rebuilds
+CFLAGS = -std=gnu99 -fcommon -O2 -G0 -Wall -g -MMD -MP -DHAVE_FFBLK -DDOSISM -DWMODE=$(GAME)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 LIBDIR =
@@ -78,7 +89,7 @@ BUILD_PRX = 1
 PSP_FW_VERSION = 401
 # PSP_DEVIATION: PSP_LARGE_MEMORY=1 kept as in the original build (MEMSIZE=1 in PARAM.SFO). Untested without it on a Vita.
 PSP_LARGE_MEMORY = 1
-EXTRA_TARGETS = EBOOT.PBP
+EXTRA_TARGETS = $(PSP_EBOOT)
 
 # PSP_DEVIATION: XMB menu assets live in menu/<family>/: ICON0.png (144x80), PIC1.png (480x272) and
 # SND0.AT3 (ATRAC3, 44.1kHz, <= 55s). Each game maps to one family folder; any asset a family does not
@@ -113,6 +124,25 @@ LIBS += -lstdc++
 LIBS += $(filter-out -lc -lpspuser,$(shell $(PSPBIN)/sdl-config --libs))
 include $(PSPSDK)/lib/build.mak
 
+.DEFAULT_GOAL := all
+
+# Objects are built from src/ into the per-game build directory
+$(BUILDDIR)/%.o: src/%.c | $(BUILDDIR)
+	$(COMPILE.c) -o $@ $<
+
+# Output directories are created on demand (order-only prerequisites)
+$(BUILDDIR) $(DISTDIR):
+	mkdir -p $@
+$(PSP_EBOOT_SFO): | $(BUILDDIR)
+$(PSP_EBOOT): | $(DISTDIR)
+
+-include $(OBJS:.o=.d)
+
+# make cleanall: remove every game's build directory (finished packages in dist/ are kept)
+.PHONY: cleanall
+cleanall:
+	rm -rf build
+
 # Readme written next to the EBOOT for games whose data files are not in the repo (see the package target)
 README_WOLF3D_FULL = In order to run the full version of the game, you need to place the wolf3d game data files here.
 README_WOLF3D_SOD_FULL = In order to run Spear of Destiny, you need to place the Spear of Destiny game data files (*.sod) here.
@@ -121,11 +151,10 @@ README_WOLF3D_SOD_MISSION3 = In order to run Spear of Destiny Mission 3: Ultimat
 # PSP_DEVIATION: apostrophe is shell-escaped because the text is single-quoted in the package recipe
 README_WOLF3D_NOAH3D = In order to run Super 3-D Noah'\''s Ark, you need to place the game data files (*.N3D) here.
 
-# make package GAME=<name>: assemble dist/<GAME>/ ready to copy to the PSP (EBOOT, bundled data files, generated readme)
+# make package GAME=<name>: the EBOOT is already built into dist/<GAME>/; this adds the bundled data files and
+# the generated readme. Nothing in dist/<GAME>/ is deleted: games whose data files are not in the repo
+# keep the data files the user copied there by hand.
 .PHONY: package
-package: EBOOT.PBP
-	rm -rf dist/$(GAME)
-	mkdir -p dist/$(GAME)
-	if [ -d $(GAME) ]; then cp $(GAME)/* dist/$(GAME)/; fi
-	$(if $(README_$(GAME)),printf '%s\n' '$(README_$(GAME))' > dist/$(GAME)/readme.txt)
-	cp EBOOT.PBP dist/$(GAME)/
+package: $(PSP_EBOOT)
+	if [ -d $(GAME) ]; then cp $(GAME)/* $(DISTDIR)/; fi
+	$(if $(README_$(GAME)),printf '%s\n' '$(README_$(GAME))' > $(DISTDIR)/readme.txt)
