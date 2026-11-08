@@ -620,6 +620,12 @@ void FillSoundBuff(void)
 #define alFeedCon 0xc0 // PSP_DEVIATION: lowercase hex to match earlier identical definition (no redefinition warning)
 #define alWave 0xe0
 
+			// PSP_DEVIATION: OPLResetChip (called by SD_MusicOff on every music start/stop) clears the
+			// waveform select enable bit (register 0x01 bit 5), after which the chip ignores the alWave
+			// registers and every instrument plays as a plain sine. InitSoundBuff only sets it once at
+			// startup, so re-enable it before each sound effect.
+			OPLWrite(OPL, 0x01, 0x20);
+
 			OPLWrite(OPL, 0 + alChar, 0);
 			OPLWrite(OPL, 0 + alScale, 0);
 			OPLWrite(OPL, 0 + alAttack, 0);
@@ -692,40 +698,36 @@ void FillSoundBuff(void)
 #endif
 			if (AdlibPlaying != -1)
 			{
-				if (AdlibLength == 0)
+				// PSP_DEVIATION: AdLib sound effect playback rewritten to match the original id ALSoundService
+				// (ID_SD.C). Each note byte is one 140Hz step (5 ticks of 700Hz; two ticks are processed per pass).
+				// - A note byte of 0 is a KEY-OFF (0xB0 = 0), not "frequency 0 with the key held". The following
+				//   non-zero note then keys the channel back on, which restarts the envelope. Without this the
+				//   instruments' percussive envelopes decayed during the first burst and the rest of the effect
+				//   was inaudible, since the key was never released and so never re-triggered.
+				// - Rewriting 0xB0 with the key already on is harmless (the OPL only retriggers on a key transition).
+				// - The sound ends with a key-off so the channel is not left keyed.
+				int t;
+				for (t = 0; t < 2 && AdlibPlaying != -1; t++)
 				{
-					//OPLWrite(OPL, 0xB0, AdlibBlock);
+					if (AdlibLength <= 0)
+					{
+						OPLWrite(OPL, 0xB0, 0);
+						AdlibPlaying = -1;
+						break;
+					}
+					if ((AdlibLength % 5) == 0)
+					{
+						if (*AdlibData)
+						{
+							OPLWrite(OPL, 0xA0, *AdlibData);
+							OPLWrite(OPL, 0xB0, AdlibBlock);
+						}
+						else
+							OPLWrite(OPL, 0xB0, 0);
+						AdlibData++;
+					}
+					AdlibLength--;
 				}
-				else if (AdlibLength == -1)
-				{
-					OPLWrite(OPL, 0xA0, 00);
-					OPLWrite(OPL, 0xB0, AdlibBlock);
-					AdlibPlaying = -1;
-				}
-				else if ((AdlibLength % 5) == 0)
-				{
-					OPLWrite(OPL, 0xA0, *AdlibData);
-					OPLWrite(OPL, 0xB0, AdlibBlock & ~2);
-					AdlibData++;
-				}
-				AdlibLength--;
-				if (AdlibLength == 0)
-				{
-					//OPLWrite(OPL, 0xB0, AdlibBlock);
-				}
-				else if (AdlibLength == -1)
-				{
-					OPLWrite(OPL, 0xA0, 00);
-					OPLWrite(OPL, 0xB0, AdlibBlock);
-					AdlibPlaying = -1;
-				}
-				else if ((AdlibLength % 5) == 0)
-				{
-					OPLWrite(OPL, 0xA0, *AdlibData);
-					OPLWrite(OPL, 0xB0, AdlibBlock & ~2);
-					AdlibData++;
-				}
-				AdlibLength--;
 			}
 
 			YM3812UpdateOne(OPL, &musbuf[i * NUM_SAMPS / 4], NUM_SAMPS / 4);
@@ -1150,6 +1152,7 @@ void SD_MusicOff()
 
 	sqActive = false;
 	OPLResetChip(OPL);
+	OPLWrite(OPL, 0x01, 0x20); // PSP_DEVIATION: OPLResetChip clears WSE (waveform select); restore it for music and effects
 
 	for (j = 0; j < NUM_SAMPS; j++)
 		musbuf[j] = 0;
