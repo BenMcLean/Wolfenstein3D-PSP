@@ -925,8 +925,25 @@ static boolean SD_PlayDirSound(soundnames sound, fixed gx, fixed gy)
 				return false; // no free channels, and priority not high enough to preempt a playing sound
 
 			SoundPage[i] = DigiList[(DigiMap[sound] * 2) + 0];
-			SoundData[i] = PM_GetSoundPage(SoundPage[i]);
 			SoundLen[i] = DigiList[(DigiMap[sound] * 2) + 1];
+			/* PSP_DEVIATION: load every page of the digitized sound here, on the game thread.
+			   Digi sounds longer than one page (PMPageSize) used to load their later pages
+			   lazily from FillSoundBuff, which runs in SDL's audio callback thread. That
+			   thread then called PM_GetPage concurrently with the game thread, racing on
+			   the shared VSWAP file handle (seek+read) and on malloc. A read could land at
+			   the wrong offset, and the wrong data stayed cached forever, which showed up
+			   as swapped E/W vs N/S wall textures, randomly corrupted sprites
+			   and bursts of static in the audio. Only the Vita (Adrenaline)
+			   reproduced it because its slow storage widens the race window; PPSSPP's
+			   instant I/O hid it. With every page cached before playback starts, the audio
+			   thread only reads already-cached pages and never touches file I/O or malloc.
+			   Do not call PM_* or any file/allocation code from the audio callback. */
+			{
+				int k, pages = (SoundLen[i] + (PMPageSize - 1)) / PMPageSize;
+				for (k = 0; k < pages; k++)
+					PM_GetSoundPage(SoundPage[i] + k);
+			}
+			SoundData[i] = PM_GetSoundPage(SoundPage[i]);
 			SoundPlayLen[i] = (SoundLen[i] < 4096) ? SoundLen[i] : 4096;
 			SoundPlayPos[i] = 0;
 			if (SPHack)
