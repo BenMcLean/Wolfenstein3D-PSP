@@ -22,27 +22,44 @@ jobs:
           - game: WOLF3D_SOD_FULL
           - game: WOLF3D_SOD_MISSION2
           - game: WOLF3D_SOD_MISSION3
+          - game: WOLF3D_NOAH3D
     steps:
       - uses: actions/checkout@v4
 
       - name: Build EBOOT
         run: make GAME=${{ matrix.game }} package
 
-      - name: Package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.game }}
+          path: dist/${{ matrix.game }}
+          if-no-files-found: error
+          retention-days: 1 # intermediate; only the combined zip is kept
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Each artifact downloads into its own directory named after the game
+      - uses: actions/download-artifact@v4
+        with:
+          path: games
+
+      - name: Zip all games
         run: |
           # Tag builds are named after the tag (v2026-11-06); manual runs use the short commit hash
           VERSION="${GITHUB_REF_NAME}"
           if [ "${GITHUB_REF_TYPE}" != "tag" ]; then VERSION="dev-$(echo "${GITHUB_SHA}" | cut -c1-7)"; fi
-          tar -C dist -czf "${{ matrix.game }}-${VERSION}.tar.gz" "${{ matrix.game }}"
+          (cd games && zip -r "../Wolfenstein3D-PSP-${VERSION}.zip" .)
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.game }}
-          path: ${{ matrix.game }}-*.tar.gz
+          name: Wolfenstein3D-PSP
+          path: Wolfenstein3D-PSP-*.zip
           if-no-files-found: error
 
   release:
-    needs: build
+    needs: package
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
@@ -50,9 +67,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          merge-multiple: true
+          name: Wolfenstein3D-PSP
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*.tar.gz
+          files: Wolfenstein3D-PSP-*.zip

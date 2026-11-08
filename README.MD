@@ -8,7 +8,7 @@ As for building the game itself, you have two options:
 1) Run the makerelease.sh shell script. 
 2) Manually build.
 
-For option 1, it will build each version of Wolf3D and package them in tar.gz files (in the root directory), ready to extract and run on your PSP.
+For option 1, it will build each version of Wolf3D and package them all into a single Wolfenstein3D-PSP.zip (in the root directory, requires `zip`), containing one folder per game, ready to extract and run on your PSP. The Spear of Destiny demo is not included.
 For option 2, you need to specify which version of Wolf3D you intend to build:
 
 ```
