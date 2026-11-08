@@ -4,12 +4,12 @@
 /* Change WMODE to point to the executable you would like to build: */
 // Mode 0 = Wolf3D Shareware
 // Mode 1 = Wolf3d Full
-// Mode 2 = SOD Shareware
+// Mode 2 = SOD Demo (a commercial demo, not shareware)
 // Mode 3 = SOD Full / SOD Episode 1 & 2
 
 #define WOLF3D_SHAREWARE 0
 #define WOLF3D_FULL 1
-#define WOLF3D_SOD_SHAREWARE 2
+#define WOLF3D_SOD_DEMO 2
 #define WOLF3D_SOD_FULL 3
 #define WOLF3D_SOD_MISSION2 4 /* PSP_DEVIATION */
 #define WOLF3D_SOD_MISSION3 5 /* PSP_DEVIATION */

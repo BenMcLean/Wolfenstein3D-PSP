@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           # game is the Makefile GAME name (also the data and menu/ directory name).
-          # WOLF3D_SOD_SHAREWARE is intentionally not built.
+          # WOLF3D_SOD_DEMO is intentionally not built.
           - game: WOLF3D_SHAREWARE
           - game: WOLF3D_FULL
           - game: WOLF3D_SOD_FULL

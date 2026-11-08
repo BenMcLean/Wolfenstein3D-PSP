@@ -14,7 +14,7 @@ For option 2, you need to specify which version of Wolf3D you intend to build:
 ```
 WOLF3D_SHAREWARE
 WOLF3D_FULL
-WOLF3D_SOD_SHAREWARE
+WOLF3D_SOD_DEMO      (Commercial Demo)
 WOLF3D_SOD_FULL
 WOLF3D_SOD_MISSION2  (Return to Danger)
 WOLF3D_SOD_MISSION3  (Ultimate Challenge)
