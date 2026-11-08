@@ -46,7 +46,7 @@ CP_iteminfo
 #else
 	MainItems = {MENU_X, MENU_Y, 8, STARTITEM, 24},
 #endif
-	SndItems = {SM_X, SM_Y1, 12, 0, 52},
+	SndItems = {SM_X, SM_Y1, SM_ITEMS, 0, 52},
 	LSItems = {LSM_X, LSM_Y, 10, 0, 24},
 	CtlItems = {CTL_X, CTL_Y, 1, 0, 56},
 	CusItems = {8, CST_Y + 13 * 2, 9, -1, 0},
@@ -79,7 +79,9 @@ CP_itemtype
 			{1, STR_SB, 0},
 			{0, "", 0},
 			{0, "", 0},
+#ifndef GAMEVER_NOAH3D // PSP_DEVIATION: S3DNA RESTORATION - one fewer spacer row
 			{0, "", 0},
+#endif
 			{1, STR_NONE, 0},
 			{1, STR_ALSB, 0},
 },
@@ -1047,7 +1049,7 @@ void CP_Sound()
 		//
 		// MUSIC
 		//
-		case 10:
+		case SM_MUSIC:
 			if (MusicMode != smm_Off)
 			{
 				SD_SetMusicMode(smm_Off);
@@ -1055,7 +1057,7 @@ void CP_Sound()
 				ShootSnd();
 			}
 			break;
-		case 11:
+		case SM_MUSIC + 1:
 			if (MusicMode != smm_AdLib)
 			{
 				SD_SetMusicMode(smm_AdLib);
@@ -1098,7 +1100,7 @@ void DrawSoundMenu(void)
 	//
 	if (!AdLibPresent && !SoundBlasterPresent)
 	{
-		SndMenu[1].active = SndMenu[6].active = SndMenu[11].active = 0;
+		SndMenu[1].active = SndMenu[6].active = SndMenu[SM_MUSIC + 1].active = 0;
 	}
 
 	if (!SoundBlasterPresent)
@@ -1147,11 +1149,11 @@ void DrawSoundMenu(void)
 			//
 			// MUSIC
 			//
-			case 10:
+			case SM_MUSIC:
 				if (MusicMode == smm_Off)
 					on = 1;
 				break;
-			case 11:
+			case SM_MUSIC + 1:
 				if (MusicMode == smm_AdLib)
 					on = 1;
 				break;

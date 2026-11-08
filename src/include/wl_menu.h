@@ -85,12 +85,17 @@
 #define SM_Y2 SM_Y1 + 5 * 13
 #define SM_H2 3 * 13 - 7
 #define SM_Y3 SM_Y2 + 4 * 13
+// PSP_DEVIATION: S3DNA RESTORATION - the digitized section is one row shorter, so music starts one row sooner
+#define SM_MUSIC 9
+#define SM_ITEMS 11
 #else
 #define SM_Y1 20
 #define SM_H1 4 * 13 - 7
 #define SM_Y2 SM_Y1 + 5 * 13
 #define SM_H2 4 * 13 - 7
 #define SM_Y3 SM_Y2 + 5 * 13
+#define SM_MUSIC 10
+#define SM_ITEMS 12
 #endif
 #define SM_H3 3 * 13 - 7
 
