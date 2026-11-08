@@ -416,8 +416,10 @@ void VW_Startup()
 {
 	VL_Startup();
 
-	xfrac = (vwidth << 16) / 320;
-	yfrac = (vheight << 16) / 200;
+	/* PSP_DEVIATION: round up; truncating leaves the last column/row unreached
+	   (512x320: 320 * 104857 >> 16 == 511), so it never got cleared when leaving action mode */
+	xfrac = ((vwidth << 16) + 319) / 320;
+	yfrac = ((vheight << 16) + 199) / 200;
 }
 
 void VW_Shutdown()
